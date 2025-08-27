@@ -23,6 +23,7 @@ This project contains a simplified, proof-of-concept arbitrage bot that interact
 ├── bot
 │   ├── index.js
 │   └── abis.js
+|    └── test.js
 ├── .env.example
 ├── hardhat.config.js
 ├── package.json
@@ -42,7 +43,7 @@ This project contains a simplified, proof-of-concept arbitrage bot that interact
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone 
    cd uniswap-v3-arbitrage-bot
    ```
 
@@ -86,6 +87,57 @@ First, edit the `scripts/deploy.js` file to configure the Uniswap router address
 ```bash
 npx hardhat run scripts/deploy.js --network <your-network>
 ```
+```OUTPUT
+[Block #23232851]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232852]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232853]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232854]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232855]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232856]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232857]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232858]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
+  No profitable opportunity found.
+
+[Block #23232859]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.923442363168889106 DAI -> 0.000198800635817345 WETH
+  No profitable opportunity found.
+
+[Block #23232860]
+  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
+  0.0002 WETH -> 0.923442363168889106 DAI -> 0.000198800635817345 WETH
+  No profitable opportunity found.
+```
 
 ## Disclaimer
 
@@ -97,4 +149,4 @@ This is a proof-of-concept and not a production-ready system. Real-world arbitra
 - **Robust Error Handling and Security**: Ensuring the bot and smart contract are secure and can handle unexpected situations.
 - **Low-Latency Infrastructure**: Running on a high-performance server to react quickly to market changes.
 
-Use this code for educational purposes only.
+
