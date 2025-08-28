@@ -103,40 +103,6 @@ npx hardhat run scripts/deploy.js --network <your-network>
   0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
   No profitable opportunity found.
 
-[Block #23232854]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
-  No profitable opportunity found.
-
-[Block #23232855]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
-  No profitable opportunity found.
-
-[Block #23232856]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
-  No profitable opportunity found.
-
-[Block #23232857]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
-  No profitable opportunity found.
-
-[Block #23232858]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
-  No profitable opportunity found.
-
-[Block #23232859]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.923442363168889106 DAI -> 0.000198800635817345 WETH
-  No profitable opportunity found.
-
-[Block #23232860]
-  Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
-  0.0002 WETH -> 0.923442363168889106 DAI -> 0.000198800635817345 WETH
-  No profitable opportunity found.
 ```
 
 ## Disclaimer
