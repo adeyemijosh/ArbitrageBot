@@ -102,7 +102,6 @@ npx hardhat run scripts/deploy.js --network <your-network>
   Trade Path: WETH -> DAI (Uniswap) -> WETH (Sushiswap)
   0.0002 WETH -> 0.925062046729720159 DAI -> 0.000199011907983822 WETH
   No profitable opportunity found.
-
 ```
 
 ## Disclaimer
