@@ -106,12 +106,5 @@ npx hardhat run scripts/deploy.js --network <your-network>
 
 ## Disclaimer
 
-This is a proof-of-concept and not a production-ready system. Real-world arbitrage is highly competitive and requires a much more sophisticated setup, including:
-
-- **Advanced Strategies**: Monitoring multiple DEXs and token pairs.
-- **Gas Fee Optimization**: Minimizing transaction costs is crucial for profitability.
-- **Flash Loans/Swaps**: Using flash loans to borrow assets for arbitrage without upfront capital.
-- **Robust Error Handling and Security**: Ensuring the bot and smart contract are secure and can handle unexpected situations.
-- **Low-Latency Infrastructure**: Running on a high-performance server to react quickly to market changes.
-
+This is a proof-of-concept and not a production-ready system. Real-world arbitrage is highly competitive and requires a much more sophisticated setup
 
