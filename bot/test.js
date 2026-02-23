@@ -12,15 +12,15 @@ const DAI_ADDRESS = process.env.DAI_ADDRESS;
 const WETH = new Token(1, ethers.getAddress(WETH_ADDRESS), 18, "WETH", "Wrapped Ether");
 const DAI = new Token(1, ethers.getAddress(DAI_ADDRESS), 18, "DAI", "Dai Stablecoin");
 
-const provider = new ethers.JsonRpcProvider(process.env.MAINNET_RPC_URL);
+const provider = new ethers.JsonRpcProvider(process.env.STAGENET_RPC_URL);
 
 async function testQuote() {
     console.log("--- Running Uniswap V3 Quote Test ---");
-    if (!process.env.MAINNET_RPC_URL) {
-        console.error("MAINNET_RPC_URL not found in .env file.");
+    if (!process.env.STAGENET_RPC_URL) {
+        console.error("STAGENET_RPC_URL not found in .env file.");
         return;
     }
-    console.log("Using RPC URL:", process.env.MAINNET_RPC_URL);
+    console.log("Using RPC URL:", process.env.STAGENET_RPC_URL);
 
 
     const quoter = new ethers.Contract(UNISWAP_V3_QUOTER, [

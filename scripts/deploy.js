@@ -1,99 +1,116 @@
-const { ethers } = require("hardhat");
+const hre = require("hardhat");
 
 async function main() {
-    // Get signer and network
-    const [deployer] = await ethers.getSigners();
-    const network = await ethers.provider.getNetwork();
+  console.log(" Starting deployment...");
+  console.log("=".repeat(60));
+  console.log("Network:", hre.network.name);
+  console.log("=".repeat(60));
 
-    console.log("Deploying Arbitrage Contract...");
-    console.log("Deploying with account:", deployer.address);
-    console.log("Network:", network.name, "(Chain ID:", network.chainId + ")");
+  const [deployer] = await hre.ethers.getSigners();
+  console.log("Deploying contracts with account:", deployer.address);
 
-    // Get balance and check sufficiency
-    const balance = await ethers.provider.getBalance(deployer.address);
-    console.log("Account balance:", ethers.formatEther(balance), "ETH");
+  try {
+    const balance = await deployer.provider.getBalance(deployer.address);
+    console.log("Account balance:", hre.ethers.formatEther(balance), "ETH");
+  } catch (error) {
+    console.log("  Account balance: Unable to fetch (possibly no funds or network issue)");
+  }
 
-    const minBalance = ethers.parseEther("0.0002");
-    if (balance < minBalance) {
-        throw new Error(`Insufficient balance. Need at least ${ethers.formatEther(minBalance)} ETH`);
-    }
+  // Deploy ERC20 Mock tokens
+  console.log("\n Deploying ERC20 Mock tokens...");
+  
+  const ERC20Mock = await hre.ethers.getContractFactory("ERC20Mock");
+  
+  const tokenA = await ERC20Mock.deploy("Mock USDC", "USDC");
+  await tokenA.waitForDeployment();
+  console.log("   Token A (USDC) deployed:", await tokenA.getAddress());
 
-    // Load router addresses from environment
-    const UNISWAP_V3_ROUTER = process.env.UNISWAP_V3_ROUTER;
-    const SUSHISWAP_V2_ROUTER = process.env.SUSHISWAP_V2_ROUTER;
+  const tokenB = await ERC20Mock.deploy("Mock DAI", "DAI");
+  await tokenB.waitForDeployment();
+  console.log("   Token B (DAI) deployed:", await tokenB.getAddress());
 
-    if (!UNISWAP_V3_ROUTER || !SUSHISWAP_V2_ROUTER) {
-        throw new Error("Router addresses not found in .env file");
-    }
+  // Deploy Mock Routers
+  console.log("\n  Deploying Mock Routers...");
 
-    console.log("Using routers:");
-    console.log("   Uniswap V3:", UNISWAP_V3_ROUTER);
-    console.log("   SushiSwap V2:", SUSHISWAP_V2_ROUTER);
+  const UniswapV3RouterMock = await hre.ethers.getContractFactory("UniswapV3RouterMock");
+  const uniswapRouter = await UniswapV3RouterMock.deploy();
+  await uniswapRouter.waitForDeployment();
+  console.log("   Uniswap V3 Router Mock deployed:", await uniswapRouter.getAddress());
 
-    // Deploy contract
-    console.log("Deploying contract...");
-    const Arbitrage = await ethers.getContractFactory("Arbitrage");
+  const UniswapV2RouterMock = await hre.ethers.getContractFactory("UniswapV2RouterMock");
+  const sushiswapRouter = await UniswapV2RouterMock.deploy();
+  await sushiswapRouter.waitForDeployment();
+  console.log("   Sushiswap Router Mock deployed:", await sushiswapRouter.getAddress());
 
-    // Deploy with gas settings for local networks
-    const txOverrides = {
-        gasLimit: 8000000,
-        gasPrice: (network.name === "hardhat" || network.name === "localhost") ?
-            ethers.parseUnits('50', 'gwei') :
-            undefined
-    };
+  // Deploy Arbitrage Contract
+  console.log("\n  Deploying Arbitrage Contract...");
+  
+  const Arbitrage = await hre.ethers.getContractFactory("Arbitrage");
+  const arbitrage = await Arbitrage.deploy(
+    await uniswapRouter.getAddress(),
+    await sushiswapRouter.getAddress()
+  );
+  await arbitrage.waitForDeployment();
+  console.log("   Arbitrage contract deployed:", await arbitrage.getAddress());
 
-    const arbitrage = await Arbitrage.deploy(
-        UNISWAP_V3_ROUTER,
-        SUSHISWAP_V2_ROUTER,
-        txOverrides
-    );
+  // Set up initial token balances
+  console.log("\n  Setting up initial balances...");
+  
+  const initialAmount = hre.ethers.parseUnits("10000", 18);
+  const arbitrageAddress = await arbitrage.getAddress();
+  
+  await tokenA.transfer(arbitrageAddress, initialAmount);
+  console.log("   Transferred 10,000 Token A to arbitrage contract");
+  
+  await tokenB.transfer(arbitrageAddress, initialAmount);
+  console.log("   Transferred 10,000 Token B to arbitrage contract");
 
-    // Wait for deployment
-    await arbitrage.waitForDeployment();
-    const contractAddress = await arbitrage.getAddress();
+  await tokenA.transfer(deployer.address, initialAmount);
+  console.log("   Transferred 10,000 Token A to deployer");
+  
+  await tokenB.transfer(deployer.address, initialAmount);
+  console.log("   Transferred 10,000 Token B to deployer");
 
-    // Get transaction receipt
-    const deploymentTx = arbitrage.deploymentTransaction();
-    const receipt = await deploymentTx.wait();
+  // Approve tokens
+  console.log("\n  Approving tokens for arbitrage contract...");
+  
+  await tokenA.approve(arbitrageAddress, hre.ethers.MaxUint256);
+  console.log("   Token A approved for arbitrage contract");
+  
+  await tokenB.approve(arbitrageAddress, hre.ethers.MaxUint256);
+  console.log("   Token B approved for arbitrage contract");
 
-    console.log("Deployment successful!");
-    console.log("Contract address:", contractAddress);
-    console.log("Transaction hash:", receipt.hash);
-    console.log("Gas used:", receipt.gasUsed.toString());
+  const tokenAAddress = await tokenA.getAddress();
+  const tokenBAddress = await tokenB.getAddress();
+  const uniswapAddress = await uniswapRouter.getAddress();
+  const sushiswapAddress = await sushiswapRouter.getAddress();
 
-    // Display contract details
-    console.log("\nContract Details:");
-    console.log("Owner:", await arbitrage.owner());
-    console.log("Uniswap Router:", await arbitrage.uniswapRouter());
-    console.log("Sushiswap Router:", await arbitrage.sushiswapRouter());
+  console.log("\n All contracts deployed successfully!");
+  console.log("\n Deployment Summary:");
+  console.log("=".repeat(60));
+  console.log("Network:", hre.network.name);
+  console.log("Deployer:", deployer.address);
+  console.log("=".repeat(60));
+  console.log("Token A (USDC):", tokenAAddress);
+  console.log("Token B (DAI):", tokenBAddress);
+  console.log("Uniswap V3 Router:", uniswapAddress);
+  console.log("Sushiswap Router:", sushiswapAddress);
+  console.log("Arbitrage Contract:", arbitrageAddress);
+  console.log("=".repeat(60));
 
-    // Save deployment info - Convert BigInt values to strings for JSON serialization
-    const deploymentInfo = {
-        network: network.name,
-        chainId: network.chainId.toString(),
-        contractAddress: contractAddress,
-        deployer: deployer.address,
-        timestamp: new Date().toISOString(),
-        txHash: receipt.hash,
-        gasUsed: receipt.gasUsed.toString(),
-        routers: {
-            uniswap: UNISWAP_V3_ROUTER,
-            sushiswap: SUSHISWAP_V2_ROUTER
-        }
-    };
+  if (hre.network.name === "stagenet") {
+    console.log("\n Stagenet deployment completed successfully!");
+    console.log("   - All contracts are deployed and configured");
+    console.log("   - Initial balances set up for testing");
+    console.log("   - Tokens approved for arbitrage operations");
+  }
 
-    console.log("\nDeployment info:", JSON.stringify(deploymentInfo, null, 2));
-
-    // Display verification command for real networks
-    if (network.name !== "hardhat" && network.name !== "localhost") {
-        console.log("\n Verify contract:");
-        console.log(`npx hardhat verify --network ${network.name} ${contractAddress} "${UNISWAP_V3_ROUTER}" "${SUSHISWAP_V2_ROUTER}"`);
-    }
+  console.log("\n Deployment completed successfully!");
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error("Error:", error);
-        process.exit(1);
-    });
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(" Deployment failed:", error);
+    process.exit(1);
+  });

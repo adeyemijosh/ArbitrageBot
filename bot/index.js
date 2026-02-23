@@ -22,7 +22,7 @@ const DAI_ADDRESS = process.env.DAI_ADDRESS;
 const WETH = new Token(1, ethers.getAddress(WETH_ADDRESS), 18, "WETH", "Wrapped Ether");
 const DAI = new Token(1, ethers.getAddress(DAI_ADDRESS), 18, "DAI", "Dai Stablecoin");
 
-const provider = new ethers.JsonRpcProvider(process.env.MAINNET_RPC_URL);
+const provider = new ethers.JsonRpcProvider(process.env.STAGENET_RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const arbitrageContract = new ethers.Contract(ARBITRAGE_CONTRACT_ADDRESS, ArbitrageABI, wallet);
