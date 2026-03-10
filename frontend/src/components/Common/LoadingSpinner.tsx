@@ -5,24 +5,18 @@ interface LoadingSpinnerProps {
   text?: string
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = 'md', 
-  text = 'Loading...' 
-}) => {
-  const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8'
-  }
+const sizes = { sm: 16, md: 24, lg: 36 }
 
-  return (
-    <div className="flex flex-col items-center justify-center space-y-2">
-      <div className={`spinner ${sizeClasses[size]}`}></div>
-      {text && (
-        <p className="text-sm text-gray-600">{text}</p>
-      )}
-    </div>
-  )
-}
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md', text = 'Loading...' }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+    <div
+      className="spinner"
+      style={{ width: sizes[size], height: sizes[size] }}
+    />
+    {text && (
+      <p style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>{text}</p>
+    )}
+  </div>
+)
 
 export default LoadingSpinner

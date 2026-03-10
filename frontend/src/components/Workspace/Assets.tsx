@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../store/store'
 import { useGetWalletBalancesQuery, useGetTVLDataQuery, useAddProjectTokenMutation, useRemoveProjectTokenMutation } from '../../store/api/workspaceApi'
 import { addTVLDataPoint } from '../../store/chartSlice'
-import { addTransaction, updateBalance } from '../../store/walletSlice'
+import { updateBalance } from '../../store/walletSlice'
 import LoadingSpinner from '../Common/LoadingSpinner'
 import ErrorBoundary from '../Common/ErrorBoundary'
 import TVLChart from '../Charts/TVLChart'
@@ -14,290 +14,169 @@ const Assets: React.FC = () => {
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
   const { tvlData } = useSelector((state: RootState) => state.charts)
   const { wallet } = useSelector((state: RootState) => state.wallet)
-  
+
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h')
-  const [interval, setInterval] = useState<'1m' | '5m' | '15m' | '1h' | '1d'>('1h')
+  const [interval] = useState<'1m' | '5m' | '15m' | '1h' | '1d'>('1h')
   const [showAddToken, setShowAddToken] = useState(false)
   const [newTokenAddress, setNewTokenAddress] = useState('')
 
   const walletAddress = currentWorkspace?.address || ''
-  
+
   const { data: balances, isLoading: balancesLoading, error: balancesError } = useGetWalletBalancesQuery(walletAddress, {
-    skip: !walletAddress,
-    pollingInterval: 30000, // Poll every 30 seconds
+    skip: !walletAddress, pollingInterval: 30000,
   })
-
-  const { data: tvlChartData, isLoading: tvlLoading, error: tvlError } = useGetTVLDataQuery({
-    walletAddress,
-    timeRange,
-    interval
-  }, {
-    skip: !walletAddress,
-    pollingInterval: 10000, // Poll every 10 seconds for TVL
-  })
-
+  const { data: tvlChartData, isLoading: tvlLoading, error: tvlError } = useGetTVLDataQuery(
+    { walletAddress, timeRange, interval } as any,
+    { skip: !walletAddress, pollingInterval: 10000 }
+  )
   const [addProjectToken, { isLoading: addingToken }] = useAddProjectTokenMutation()
   const [removeProjectToken, { isLoading: removingToken }] = useRemoveProjectTokenMutation()
 
-  // Update Redux store with new data
   useEffect(() => {
-    if (tvlChartData && tvlChartData.length > 0) {
-      // Add latest TVL data point
-      const latestPoint = tvlChartData[tvlChartData.length - 1]
-      dispatch(addTVLDataPoint(latestPoint))
-    }
+    if (tvlChartData?.length) dispatch(addTVLDataPoint((tvlChartData as any)[tvlChartData.length - 1]))
   }, [tvlChartData, dispatch])
 
   useEffect(() => {
-    if (balances) {
-      // Update balances in Redux store
-      balances.forEach(balance => {
-        dispatch(updateBalance(balance))
-      })
-    }
+    if (balances) balances.forEach(b => dispatch(updateBalance(b)))
   }, [balances, dispatch])
 
-  const handleAddProjectToken = async () => {
+  const handleAddToken = async () => {
     if (!newTokenAddress || !walletAddress) return
-
     try {
-      await addProjectToken({
-        walletAddress,
-        tokenAddress: newTokenAddress
-      }).unwrap()
-      setNewTokenAddress('')
-      setShowAddToken(false)
-    } catch (error) {
-      console.error('Failed to add project token:', error)
-    }
+      await addProjectToken({ walletAddress, tokenAddress: newTokenAddress }).unwrap()
+      setNewTokenAddress(''); setShowAddToken(false)
+    } catch (e) { console.error(e) }
   }
 
-  const handleRemoveProjectToken = async (tokenAddress: string) => {
-    if (!walletAddress) return
-
-    try {
-      await removeProjectToken({
-        walletAddress,
-        tokenAddress
-      }).unwrap()
-    } catch (error) {
-      console.error('Failed to remove project token:', error)
-    }
+  const handleRemoveToken = async (tokenAddress: string) => {
+    try { await removeProjectToken({ walletAddress, tokenAddress }).unwrap() } catch (e) { console.error(e) }
   }
 
-  const totalUSDValue = balances?.reduce((total, balance) => total + balance.usdValue, 0) || 0
+  const totalUSDValue = balances?.reduce((t, b) => t + b.usdValue, 0) || 0
   const totalTVL = wallet?.tvl || 0
 
   if (!currentWorkspace) {
     return (
-      <div className="card">
-        <p className="text-center text-gray-500 py-8">Please select a workspace to view assets.</p>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#475569', fontSize: 13 }}>Please select a workspace to view assets.</p>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
-        {/* TVL Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Value Locked</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${totalTVL.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Real-time value</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-lg">💰</span>
-              </div>
-            </div>
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total USD Value</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${totalUSDValue.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">All tracked tokens</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-lg">📊</span>
-              </div>
+        {/* Stat cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          {[
+            { label: 'Total Value Locked', value: `$${totalTVL.toLocaleString()}`, sub: 'Real-time value', icon: '◈', accent: '#3b82f6' },
+            { label: 'Total USD Value', value: `$${totalUSDValue.toLocaleString()}`, sub: 'All tracked tokens', icon: '▲', accent: '#00ff88' },
+            { label: 'Project Tokens', value: String(balances?.length || 0), sub: 'Tracked assets', icon: '⬡', accent: '#a855f7' },
+            { label: 'Tracking Status', value: 'Active', sub: 'Live updates', icon: '◉', accent: '#00ff88' },
+          ].map(({ label, value, sub, icon, accent }) => (
+            <div key={label} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, width: 90, height: 90, pointerEvents: 'none', background: `radial-gradient(circle at top right, ${accent}15, transparent 70%)` }} />
+              <p className="section-label" style={{ marginBottom: 8 }}>{label}</p>
+              <p style={{ color: label === 'Tracking Status' ? '#00ff88' : '#f1f5f9', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{value}</p>
+              <p className="mono" style={{ color: '#475569', fontSize: 11, marginTop: 4 }}>{sub}</p>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Project Tokens</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {balances?.length || 0}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Tracked assets</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 text-lg">🏷️</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tracking Status</p>
-                <p className="text-2xl font-bold text-green-600">Active</p>
-                <p className="text-xs text-gray-500 mt-1">Live updates</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-lg">🟢</span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* TVL Chart */}
-        <div className="chart-container">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Total Value Locked (TVL)</h3>
-            <div className="flex items-center space-x-4">
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1h">Last Hour</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-              </select>
-              <button className="btn-secondary text-sm">
-                Export Data
-              </button>
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>Total Value Locked (TVL)</p>
+              <p className="mono" style={{ color: '#374151', fontSize: 11, marginTop: 2 }}>Historical chart</p>
+            </div>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {(['1h', '24h', '7d', '30d'] as const).map(r => (
+                <button key={r} onClick={() => setTimeRange(r)} style={{
+                  background: timeRange === r ? 'rgba(59,130,246,0.15)' : 'transparent',
+                  border: timeRange === r ? '1px solid rgba(59,130,246,0.35)' : '1px solid transparent',
+                  color: timeRange === r ? '#3b82f6' : '#475569',
+                  padding: '3px 10px', borderRadius: 6, fontSize: 11,
+                  cursor: 'pointer', fontFamily: 'var(--font-mono)', transition: 'all 0.15s',
+                }}>{r}</button>
+              ))}
+              <button className="btn-secondary" style={{ fontSize: 11, padding: '4px 12px', marginLeft: 8 }}>Export</button>
             </div>
           </div>
           {tvlLoading ? (
-            <div className="h-64 flex items-center justify-center">
+            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <LoadingSpinner size="md" text="Loading TVL data..." />
             </div>
           ) : tvlError ? (
-            <div className="h-64 flex items-center justify-center text-red-500">
-              Error loading TVL data
-            </div>
+            <p style={{ color: '#ef4444', textAlign: 'center', padding: '60px 0', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Error loading TVL data</p>
           ) : (
-            <TVLChart data={tvlChartData || []} height={400} />
+            <TVLChart data={(tvlChartData as any) || []} height={300} />
           )}
         </div>
 
         {/* Token Balances */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Token Balances</h3>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setShowAddToken(!showAddToken)}
-                className="btn-primary text-sm"
-              >
-                {showAddToken ? 'Cancel' : 'Add Token'}
-              </button>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>Token Balances</p>
+            <button className={showAddToken ? 'btn-secondary' : 'btn-primary'} style={{ fontSize: 12, padding: '6px 14px' }}
+              onClick={() => setShowAddToken(!showAddToken)}>
+              {showAddToken ? '✕ Cancel' : '+ Add Token'}
+            </button>
           </div>
 
           {showAddToken && (
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newTokenAddress}
-                  onChange={(e) => setNewTokenAddress(e.target.value)}
-                  placeholder="Enter token contract address"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleAddProjectToken}
-                  disabled={addingToken}
-                  className="btn-primary"
-                >
-                  {addingToken ? 'Adding...' : 'Add Token'}
-                </button>
-              </div>
+            <div style={{ marginBottom: 16, padding: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, display: 'flex', gap: 10 }}>
+              <input className="dark-input" type="text" value={newTokenAddress}
+                onChange={e => setNewTokenAddress(e.target.value)}
+                placeholder="Enter token contract address (0x...)" />
+              <button className="btn-primary" onClick={handleAddToken} disabled={addingToken}
+                style={{ whiteSpace: 'nowrap', fontSize: 13 }}>
+                {addingToken ? 'Adding…' : 'Add'}
+              </button>
             </div>
           )}
 
           {balancesLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div style={{ padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
               <LoadingSpinner size="md" text="Loading balances..." />
             </div>
           ) : balancesError ? (
-            <div className="text-red-500 text-center py-8">
-              Error loading token balances
-            </div>
+            <p style={{ color: '#ef4444', textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Error loading token balances</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Token
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Balance
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      USD Value
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="dark-table">
+                <thead>
+                  <tr>{['Token', 'Balance', 'Price', 'USD Value', 'Actions'].map(h => <th key={h}>{h}</th>)}</tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {balances?.map((balance) => (
-                    <tr key={balance.tokenAddress} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-900">
-                              {balance.symbol}
-                            </span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {balance.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {balance.symbol}
-                            </div>
+                <tbody>
+                  {balances?.map(b => (
+                    <tr key={b.tokenAddress}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{
+                            width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+                            background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 10, fontWeight: 700, color: '#6366f1', fontFamily: 'var(--font-mono)',
+                          }}>{b.symbol?.slice(0, 3)}</div>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{b.name}</p>
+                            <p className="mono" style={{ fontSize: 10, color: '#475569' }}>{b.symbol}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {Number(balance.balance).toLocaleString(undefined, {
-                          maximumFractionDigits: 6
-                        })}
+                      <td className="mono" style={{ color: '#94a3b8', fontSize: 12 }}>
+                        {Number(b.balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${balance.price.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 6
-                        })}
+                      <td className="mono" style={{ color: '#94a3b8', fontSize: 12 }}>
+                        ${b.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ${balance.usdValue.toLocaleString()}
+                      <td className="mono" style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600 }}>
+                        ${b.usdValue.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleRemoveProjectToken(balance.tokenAddress)}
-                          disabled={removingToken}
-                          className="text-red-600 hover:text-red-900"
-                        >
+                      <td>
+                        <button className="btn-danger" onClick={() => handleRemoveToken(b.tokenAddress)} disabled={removingToken}>
                           Remove
                         </button>
                       </td>
@@ -309,11 +188,12 @@ const Assets: React.FC = () => {
           )}
         </div>
 
-        {/* Profit/Loss Chart */}
-        <div className="chart-container">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Profit/Loss Analysis</h3>
-          <ProfitLossChart height={300} />
+        {/* P&L Chart */}
+        <div className="card">
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Profit / Loss Analysis</p>
+          <ProfitLossChart data={[]} height={280} />
         </div>
+
       </div>
     </ErrorBoundary>
   )

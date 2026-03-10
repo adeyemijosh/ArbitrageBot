@@ -4,12 +4,14 @@ import { workspaceApi } from './api/workspaceApi'
 import workspaceSlice from './workspaceSlice'
 import chartSlice from './chartSlice'
 import walletSlice from './walletSlice'
+import themeSlice from './themeSlice'
 
 export const store = configureStore({
   reducer: {
     workspace: workspaceSlice,
     charts: chartSlice,
     wallet: walletSlice,
+    theme: themeSlice,
     [workspaceApi.reducerPath]: workspaceApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

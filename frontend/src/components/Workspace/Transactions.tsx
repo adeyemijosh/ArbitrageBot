@@ -5,233 +5,133 @@ import { useGetTransactionsQuery } from '../../store/api/workspaceApi'
 import LoadingSpinner from '../Common/LoadingSpinner'
 import ErrorBoundary from '../Common/ErrorBoundary'
 
+const statusColor: Record<string, string> = {
+  success: '#00ff88', failed: '#ef4444', pending: '#f59e0b',
+}
+const statusBg: Record<string, string> = {
+  success: 'rgba(0,255,136,0.1)', failed: 'rgba(239,68,68,0.1)', pending: 'rgba(245,158,11,0.1)',
+}
+const typeIcon: Record<string, string> = {
+  arbitrage: '◈', deposit: '▼', withdrawal: '▲', incoming: '▼', outgoing: '▲', contract_call: '⌘',
+}
+
 const Transactions: React.FC = () => {
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
   const walletAddress = currentWorkspace?.address || ''
-  
+
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h')
   const [transactionType, setTransactionType] = useState<'all' | 'arbitrage' | 'deposit' | 'withdrawal'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'pending'>('all')
 
-  const { data: transactions, isLoading, error } = useGetTransactionsQuery({
-    walletAddress,
-    timeRange,
-    transactionType,
-    status: statusFilter
-  }, {
-    skip: !walletAddress,
-    pollingInterval: 30000, // Poll every 30 seconds
-  })
+  const { data: transactions, isLoading, error } = useGetTransactionsQuery(
+    { walletAddress, timeRange, transactionType, status: statusFilter } as any,
+    { skip: !walletAddress, pollingInterval: 30000 }
+  )
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'success': return 'bg-green-100 text-green-800'
-      case 'failed': return 'bg-red-100 text-red-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'arbitrage': return '🔄'
-      case 'deposit': return '📥'
-      case 'withdrawal': return '📤'
-      default: return '💸'
-    }
-  }
+  const txList = (transactions as any)?.data || transactions || []
+  const successCount = txList.filter((t: any) => t.status === 'success').length
+  const failedCount = txList.filter((t: any) => t.status === 'failed').length
+  const successRate = txList.length > 0 ? Math.round((successCount / txList.length) * 100) : 0
 
   if (!currentWorkspace) {
     return (
-      <div className="card">
-        <p className="text-center text-gray-500 py-8">Please select a workspace to view transactions.</p>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#475569', fontSize: 13 }}>Please select a workspace to view transactions.</p>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
         {/* Filters */}
         <div className="card">
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1h">Last Hour</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Type</label>
-              <select
-                value={transactionType}
-                onChange={(e) => setTransactionType(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Types</option>
-                <option value="arbitrage">Arbitrage</option>
-                <option value="deposit">Deposit</option>
-                <option value="withdrawal">Withdrawal</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="success">Success</option>
-                <option value="failed">Failed</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
+            {[
+              { label: 'Time Range', value: timeRange, setter: setTimeRange, options: [['1h','Last Hour'],['24h','Last 24h'],['7d','Last 7 Days'],['30d','Last 30 Days']] },
+              { label: 'Type', value: transactionType, setter: setTransactionType, options: [['all','All Types'],['arbitrage','Arbitrage'],['deposit','Deposit'],['withdrawal','Withdrawal']] },
+              { label: 'Status', value: statusFilter, setter: setStatusFilter, options: [['all','All Status'],['success','Success'],['failed','Failed'],['pending','Pending']] },
+            ].map(({ label, value, setter, options }) => (
+              <div key={label}>
+                <p className="section-label" style={{ marginBottom: 6 }}>{label}</p>
+                <select className="dark-select" value={value} onChange={e => (setter as any)(e.target.value)}>
+                  {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {transactions?.length || 0}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-lg">📊</span>
-              </div>
+        {/* Summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          {[
+            { label: 'Total', value: txList.length, accent: '#3b82f6', icon: '◈' },
+            { label: 'Successful', value: successCount, accent: '#00ff88', icon: '✓' },
+            { label: 'Failed', value: failedCount, accent: '#ef4444', icon: '✗' },
+            { label: 'Success Rate', value: `${successRate}%`, accent: '#a855f7', icon: '◉' },
+          ].map(({ label, value, accent, icon }) => (
+            <div key={label} className="card" style={{ overflow: 'hidden', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, pointerEvents: 'none', background: `radial-gradient(circle at top right, ${accent}15, transparent 70%)` }} />
+              <p className="section-label" style={{ marginBottom: 6 }}>{label}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, color: accent, letterSpacing: '-0.02em' }}>{value}</p>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Successful</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {transactions?.filter(t => t.status === 'success').length || 0}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-lg">✅</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Failed</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {transactions?.filter(t => t.status === 'failed').length || 0}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <span className="text-red-600 text-lg">❌</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {transactions && transactions.length > 0 
-                    ? Math.round((transactions.filter(t => t.status === 'success').length / transactions.length) * 100)
-                    : 0}%
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 text-lg">📈</span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Transactions Table */}
+        {/* Table */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
-          
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Transaction History</p>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div style={{ padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
               <LoadingSpinner size="md" text="Loading transactions..." />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-center py-8">
-              Error loading transactions
-            </div>
-          ) : transactions && transactions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <p style={{ color: '#ef4444', textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Error loading transactions</p>
+          ) : txList.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="dark-table">
+                <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Token
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hash
-                    </th>
+                    {['Time', 'Type', 'Amount', 'Token', 'Status', 'Hash'].map(h => (
+                      <th key={h}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {transactions.map((tx) => (
-                    <tr key={tx.hash} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(tx.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg">{getTypeIcon(tx.type)}</span>
-                          <span className="text-sm font-medium text-gray-900 capitalize">
-                            {tx.type}
-                          </span>
+                <tbody>
+                  {txList.map((tx: any) => (
+                    <tr key={tx.hash}>
+                      <td className="mono" style={{ fontSize: 11 }}>{new Date(tx.timestamp).toLocaleString()}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: '#6366f1', fontSize: 12 }}>{typeIcon[tx.type] || '◈'}</span>
+                          <span style={{ color: '#94a3b8', fontSize: 12, textTransform: 'capitalize' }}>{tx.type}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {tx.amount.toLocaleString(undefined, {
-                          maximumFractionDigits: 6
-                        })}
+                      <td className="mono" style={{ color: '#f1f5f9', fontSize: 12 }}>
+                        {Number(tx.amount || tx.value || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {tx.tokenSymbol}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(tx.status)}`}>
+                      <td className="mono" style={{ color: '#94a3b8', fontSize: 12 }}>{tx.tokenSymbol || 'ETH'}</td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          padding: '3px 10px', borderRadius: 20, fontSize: 11,
+                          fontFamily: 'var(--font-mono)',
+                          background: statusBg[tx.status] || 'rgba(255,255,255,0.05)',
+                          color: statusColor[tx.status] || '#94a3b8',
+                          border: `1px solid ${statusColor[tx.status] || '#374151'}30`,
+                        }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: statusColor[tx.status] || '#374151', display: 'inline-block' }} />
                           {tx.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <a
-                          href={`https://etherscan.io/tx/${tx.hash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-900"
+                      <td>
+                        <a href={`https://etherscan.io/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer"
+                          className="mono" style={{ color: '#3b82f6', fontSize: 11, textDecoration: 'none' }}
+                          onMouseEnter={e => (e.target as HTMLElement).style.textDecoration = 'underline'}
+                          onMouseLeave={e => (e.target as HTMLElement).style.textDecoration = 'none'}
                         >
-                          {tx.hash.substring(0, 10)}...
+                          {tx.hash?.slice(0, 10)}…
                         </a>
                       </td>
                     </tr>
@@ -240,8 +140,8 @@ const Transactions: React.FC = () => {
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              No transactions found for the selected filters.
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p style={{ color: '#374151', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No transactions found for the selected filters</p>
             </div>
           )}
         </div>

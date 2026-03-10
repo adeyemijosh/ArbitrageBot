@@ -3,72 +3,126 @@ import { Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../store/store'
 
+const navItems = [
+  { name: 'Overview',      href: 'overview',      icon: '◈' },
+  { name: 'Transactions',  href: 'transactions',  icon: '⇄' },
+  { name: 'Assets',        href: 'assets',        icon: '◆' },
+  { name: 'Data Tracking', href: 'data-tracking', icon: '▲' },
+  { name: 'Source Code',   href: 'source-code',   icon: '⌘' },
+  { name: 'History',       href: 'history',       icon: '◷' },
+  { name: 'Token Stats',   href: 'token-stats',   icon: '◉' },
+]
+
 const Sidebar: React.FC = () => {
   const location = useLocation()
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
 
-  const navigation = [
-    { name: 'Overview', href: 'overview', icon: '📊' },
-    { name: 'Transactions', href: 'transactions', icon: '💸' },
-    { name: 'Assets', href: 'assets', icon: '💰' },
-    { name: 'Data Tracking', href: 'data-tracking', icon: '📈' },
-    { name: 'Source Code', href: 'source-code', icon: '💻' },
-    { name: 'History', href: 'history', icon: '📜' },
-    { name: 'Token Stats', href: 'token-stats', icon: '📊' },
-  ]
-
-  if (!currentWorkspace) {
-    return null
-  }
+  if (!currentWorkspace) return null
 
   return (
-    <div className="h-full bg-white border-r border-gray-200 flex flex-col">
-      {/* Sidebar Header */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 truncate">
-          {currentWorkspace.name}
-        </h2>
-        <p className="text-sm text-gray-500 mt-1 truncate">
+    <div style={{
+      height: '100%',
+      background: 'rgba(8,8,16,0.9)',
+      borderRight: '1px solid rgba(255,255,255,0.05)',
+      display: 'flex',
+      flexDirection: 'column',
+      backdropFilter: 'blur(20px)',
+    }}>
+      {/* Workspace info */}
+      <div style={{
+        padding: '20px 16px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: currentWorkspace.type === 'wallet'
+              ? 'rgba(59,130,246,0.15)'
+              : 'rgba(0,255,136,0.1)',
+            border: currentWorkspace.type === 'wallet'
+              ? '1px solid rgba(59,130,246,0.3)'
+              : '1px solid rgba(0,255,136,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16,
+          }}>
+            {currentWorkspace.type === 'wallet' ? '◆' : '⬡'}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{
+              fontSize: 13, fontWeight: 600, color: '#f1f5f9',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {currentWorkspace.name}
+            </p>
+            <span className={`badge ${currentWorkspace.type === 'wallet' ? 'badge-blue' : 'badge-green'}`}>
+              {currentWorkspace.type}
+            </span>
+          </div>
+        </div>
+
+        <p style={{
+          fontSize: 10, color: '#374151', fontFamily: 'var(--font-mono)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
           {currentWorkspace.address}
         </p>
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          currentWorkspace.type === 'wallet' 
-            ? 'bg-blue-100 text-blue-800' 
-            : 'bg-green-100 text-green-800'
-        }`}>
-          {currentWorkspace.type === 'wallet' ? 'Wallet' : 'Contract'}
-        </span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = location.pathname.includes(item.href)
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
+        {navItems.map(item => {
+          const active = location.pathname.includes(item.href)
           return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+            <Link key={item.name} to={item.href} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '9px 12px',
+              borderRadius: 8,
+              marginBottom: 2,
+              textDecoration: 'none',
+              fontSize: 13,
+              fontWeight: active ? 600 : 500,
+              color: active ? '#f1f5f9' : '#475569',
+              background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
+              borderRight: active ? '2px solid #6366f1' : '2px solid transparent',
+              transition: 'all 0.15s',
+            }}
+              onMouseEnter={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
+                  ;(e.currentTarget as HTMLElement).style.color = '#94a3b8'
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  ;(e.currentTarget as HTMLElement).style.color = '#475569'
+                }
+              }}
             >
-              <span className="mr-3 text-lg">{item.icon}</span>
+              <span style={{ fontSize: 14, width: 18, textAlign: 'center', flexShrink: 0, color: active ? '#6366f1' : '#374151' }}>
+                {item.icon}
+              </span>
               {item.name}
             </Link>
           )
         })}
       </nav>
 
-      {/* Sidebar Footer */}
-      <div className="flex-shrink-0 p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          Workspace ID: {currentWorkspace.id}
-        </div>
-        <div className="text-xs text-gray-500 mt-1">
+      {/* Footer */}
+      <div style={{
+        padding: '14px 16px',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <p style={{ fontSize: 10, color: '#374151', fontFamily: 'var(--font-mono)' }}>
+          ID: {currentWorkspace.id}
+        </p>
+        <p style={{ fontSize: 10, color: '#374151', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
           Created: {new Date(currentWorkspace.createdAt).toLocaleDateString()}
-        </div>
+        </p>
       </div>
     </div>
   )

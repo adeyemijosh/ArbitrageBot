@@ -1,22 +1,16 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { RootState } from '../../store/store'
+import { useParams, Outlet } from 'react-router-dom'
 import { useGetWorkspaceQuery } from '../../store/api/workspaceApi'
 import LoadingSpinner from '../Common/LoadingSpinner'
 import ErrorBoundary from '../Common/ErrorBoundary'
 
 const Workspace: React.FC = () => {
   const { workspaceId } = useParams()
-  const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
-  
-  const { data: workspace, isLoading, error } = useGetWorkspaceQuery(workspaceId || '', {
-    skip: !workspaceId
-  })
+  const { data: workspace, isLoading, error } = useGetWorkspaceQuery(workspaceId || '', { skip: !workspaceId })
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
         <LoadingSpinner size="lg" text="Loading workspace..." />
       </div>
     )
@@ -24,53 +18,58 @@ const Workspace: React.FC = () => {
 
   if (error) {
     return (
-      <div className="card">
-        <div className="text-center py-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Workspace Not Found</h3>
-          <p className="text-gray-600">The workspace you're looking for doesn't exist or you don't have access to it.</p>
-        </div>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#ef4444', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Workspace Not Found</p>
+        <p style={{ color: '#475569', fontSize: 13 }}>This workspace doesn't exist or you don't have access.</p>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
         {/* Workspace Header */}
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                workspace?.type === 'wallet' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'bg-green-100 text-green-600'
-              }`}>
-                <span className="text-2xl">
-                  {workspace?.type === 'wallet' ? '💼' : '🏗️'}
-                </span>
+        {workspace && (
+          <div className="card" style={{ position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute', top: 0, right: 0, width: 200, height: 200, pointerEvents: 'none',
+              background: workspace.type === 'wallet'
+                ? 'radial-gradient(circle at top right, rgba(59,130,246,0.08), transparent 70%)'
+                : 'radial-gradient(circle at top right, rgba(0,255,136,0.06), transparent 70%)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+                  background: workspace.type === 'wallet' ? 'rgba(59,130,246,0.15)' : 'rgba(0,255,136,0.1)',
+                  border: workspace.type === 'wallet' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(0,255,136,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                }}>
+                  {workspace.type === 'wallet' ? '◆' : '⬡'}
+                </div>
+                <div>
+                  <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em', marginBottom: 4 }}>
+                    {workspace.name}
+                  </h1>
+                  <p className="mono" style={{ color: '#475569', fontSize: 11 }}>{workspace.address}</p>
+                  <span className={`badge ${workspace.type === 'wallet' ? 'badge-blue' : 'badge-green'}`} style={{ marginTop: 6, display: 'inline-flex' }}>
+                    {workspace.type}
+                  </span>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{workspace?.name}</h1>
-                <p className="text-sm text-gray-500">{workspace?.address}</p>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
-                  workspace?.type === 'wallet' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {workspace?.type === 'wallet' ? 'Wallet' : 'Contract'}
-                </span>
+              <div style={{ textAlign: 'right' }}>
+                <p className="section-label">Created</p>
+                <p className="mono" style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>
+                  {new Date(workspace.createdAt).toLocaleDateString()}
+                </p>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Created</p>
-              <p className="text-sm font-medium">
-                {workspace && new Date(workspace.createdAt).toLocaleDateString()}
-              </p>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Content will be rendered by child routes */}
+        {/* Child routes render here */}
+        <Outlet />
       </div>
     </ErrorBoundary>
   )

@@ -5,235 +5,118 @@ import { useGetWorkspacesQuery } from '../../store/api/workspaceApi'
 import LoadingSpinner from '../Common/LoadingSpinner'
 import ErrorBoundary from '../Common/ErrorBoundary'
 
+const metricColor: Record<string, string> = {
+  price: '#3b82f6', volume: '#00ff88', liquidity: '#a855f7', profit: '#f59e0b',
+}
+const metricBg: Record<string, string> = {
+  price: 'rgba(59,130,246,0.1)', volume: 'rgba(0,255,136,0.08)', liquidity: 'rgba(168,85,247,0.1)', profit: 'rgba(245,158,11,0.1)',
+}
+
 const DataTracking: React.FC = () => {
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
   const workspaceId = currentWorkspace?.id || ''
-  
+
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h')
   const [metricType, setMetricType] = useState<'all' | 'price' | 'volume' | 'liquidity' | 'profit'>('all')
+  const [newDataPoint, setNewDataPoint] = useState({ metricType: 'price', value: '', metadata: '{}' })
 
   const { data: dataPoints, isLoading, error } = useGetWorkspacesQuery(undefined, {
-    skip: !workspaceId,
-    pollingInterval: 10000, // Poll every 10 seconds
+    skip: !workspaceId, pollingInterval: 10000,
   })
-
-  const [addDataPoint, { isLoading: addingDataPoint }] = useGetWorkspacesQuery
-  const [removeDataPoint, { isLoading: removingDataPoint }] = useGetWorkspacesQuery
-
-  const [newDataPoint, setNewDataPoint] = useState({
-    metricType: 'price',
-    value: '',
-    timestamp: Date.now(),
-    metadata: {}
-  })
-
-  const handleAddDataPoint = async () => {
-    if (!workspaceId) return
-
-    try {
-      await addDataPoint({
-        workspaceId,
-        dataPoint: {
-          ...newDataPoint,
-          value: parseFloat(newDataPoint.value),
-          timestamp: new Date().toISOString()
-        }
-      }).unwrap()
-      setNewDataPoint({
-        metricType: 'price',
-        value: '',
-        timestamp: Date.now(),
-        metadata: {}
-      })
-    } catch (error) {
-      console.error('Failed to add data point:', error)
-    }
-  }
-
-  const handleRemoveDataPoint = async (dataPointId: string) => {
-    if (!workspaceId) return
-
-    try {
-      await removeDataPoint({
-        workspaceId,
-        dataPointId
-      }).unwrap()
-    } catch (error) {
-      console.error('Failed to remove data point:', error)
-    }
-  }
-
-  const getMetricColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'price': return 'bg-blue-100 text-blue-800'
-      case 'volume': return 'bg-green-100 text-green-800'
-      case 'liquidity': return 'bg-purple-100 text-purple-800'
-      case 'profit': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
 
   if (!currentWorkspace) {
     return (
-      <div className="card">
-        <p className="text-center text-gray-500 py-8">Please select a workspace to view data tracking.</p>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#475569', fontSize: 13 }}>Please select a workspace to view data tracking.</p>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
         {/* Controls */}
         <div className="card">
-          <div className="flex flex-wrap gap-4">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1h">Last Hour</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
+              <p className="section-label" style={{ marginBottom: 6 }}>Time Range</p>
+              <select className="dark-select" value={timeRange} onChange={e => setTimeRange(e.target.value as any)}>
+                {[['1h','Last Hour'],['24h','Last 24h'],['7d','7 Days'],['30d','30 Days']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Metric Type</label>
-              <select
-                value={metricType}
-                onChange={(e) => setMetricType(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Metrics</option>
-                <option value="price">Price</option>
-                <option value="volume">Volume</option>
-                <option value="liquidity">Liquidity</option>
-                <option value="profit">Profit</option>
+              <p className="section-label" style={{ marginBottom: 6 }}>Metric Type</p>
+              <select className="dark-select" value={metricType} onChange={e => setMetricType(e.target.value as any)}>
+                {[['all','All Metrics'],['price','Price'],['volume','Volume'],['liquidity','Liquidity'],['profit','Profit']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
           </div>
         </div>
 
-        {/* Add Data Point Form */}
+        {/* Add Data Point */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Custom Data Point</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Add Custom Data Point</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Metric Type</label>
-              <select
-                value={newDataPoint.metricType}
-                onChange={(e) => setNewDataPoint({...newDataPoint, metricType: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="price">Price</option>
-                <option value="volume">Volume</option>
-                <option value="liquidity">Liquidity</option>
-                <option value="profit">Profit</option>
+              <p className="section-label" style={{ marginBottom: 6 }}>Metric Type</p>
+              <select className="dark-select" value={newDataPoint.metricType}
+                onChange={e => setNewDataPoint(p => ({ ...p, metricType: e.target.value }))}>
+                {['price','volume','liquidity','profit'].map(v => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Value</label>
-              <input
-                type="number"
-                value={newDataPoint.value}
-                onChange={(e) => setNewDataPoint({...newDataPoint, value: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter value"
-              />
+              <p className="section-label" style={{ marginBottom: 6 }}>Value</p>
+              <input className="dark-input" type="number" value={newDataPoint.value}
+                onChange={e => setNewDataPoint(p => ({ ...p, value: e.target.value }))}
+                placeholder="Enter value" />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Metadata (JSON)</label>
-              <input
-                type="text"
-                value={JSON.stringify(newDataPoint.metadata)}
-                onChange={(e) => {
-                  try {
-                    setNewDataPoint({...newDataPoint, metadata: JSON.parse(e.target.value)})
-                  } catch {
-                    // Ignore invalid JSON
-                  }
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                placeholder='{"key": "value"}'
-              />
+            <div>
+              <p className="section-label" style={{ marginBottom: 6 }}>Metadata (JSON)</p>
+              <input className="dark-input" type="text" value={newDataPoint.metadata}
+                onChange={e => setNewDataPoint(p => ({ ...p, metadata: e.target.value }))}
+                placeholder='{"key": "value"}' />
             </div>
           </div>
-          <div className="mt-4 flex space-x-3">
-            <button
-              onClick={handleAddDataPoint}
-              disabled={addingDataPoint}
-              className="btn-primary"
-            >
-              {addingDataPoint ? 'Adding...' : 'Add Data Point'}
-            </button>
-          </div>
+          <button className="btn-primary" style={{ fontSize: 13 }}>
+            + Add Data Point
+          </button>
         </div>
 
-        {/* Data Points List */}
+        {/* Data Points */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Points</h3>
-          
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Data Points</p>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div style={{ padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
               <LoadingSpinner size="md" text="Loading data points..." />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-center py-8">
-              Error loading data points
-            </div>
-          ) : dataPoints && dataPoints.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Value
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Metadata
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
+            <p style={{ color: '#ef4444', textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Error loading data points</p>
+          ) : (dataPoints as any[])?.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="dark-table">
+                <thead>
+                  <tr>{['Time','Type','Value','Metadata','Actions'].map(h => <th key={h}>{h}</th>)}</tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {dataPoints.map((point) => (
-                    <tr key={point.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(point.timestamp).toLocaleString()}
+                <tbody>
+                  {(dataPoints as any[]).map((point: any) => (
+                    <tr key={point.id}>
+                      <td className="mono" style={{ fontSize: 11 }}>{new Date(point.timestamp).toLocaleString()}</td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex', padding: '2px 10px', borderRadius: 20, fontSize: 10,
+                          fontFamily: 'var(--font-mono)',
+                          background: metricBg[point.metricType] || 'rgba(255,255,255,0.05)',
+                          color: metricColor[point.metricType] || '#94a3b8',
+                          border: `1px solid ${metricColor[point.metricType] || '#374151'}30`,
+                        }}>{point.metricType}</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMetricColor(point.metricType)}`}>
-                          {point.metricType}
-                        </span>
+                      <td className="mono" style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600 }}>
+                        {point.value?.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {point.value.toLocaleString(undefined, {
-                          maximumFractionDigits: 6
-                        })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {JSON.stringify(point.metadata)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleRemoveDataPoint(point.id)}
-                          disabled={removingDataPoint}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Remove
-                        </button>
+                      <td className="mono" style={{ color: '#374151', fontSize: 10 }}>{JSON.stringify(point.metadata)}</td>
+                      <td>
+                        <button className="btn-danger">Remove</button>
                       </td>
                     </tr>
                   ))}
@@ -241,11 +124,12 @@ const DataTracking: React.FC = () => {
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              No data points found for the selected filters.
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p style={{ color: '#374151', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No data points found for the selected filters</p>
             </div>
           )}
         </div>
+
       </div>
     </ErrorBoundary>
   )

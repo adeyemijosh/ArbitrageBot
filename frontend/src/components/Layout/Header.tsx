@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../store/store'
+import ThemeToggle from '../Common/ThemeToggle'
 
 const Header: React.FC = () => {
   const location = useLocation()
@@ -9,40 +10,113 @@ const Header: React.FC = () => {
   const isWorkspaceRoute = location.pathname.startsWith('/workspace/')
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AB</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">ArbitrageBot</h1>
-                {isWorkspaceRoute && currentWorkspace && (
-                  <p className="text-sm text-gray-500">{currentWorkspace.name}</p>
-                )}
-              </div>
-            </div>
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-              Dashboard
-            </Link>
-            {isWorkspaceRoute && currentWorkspace && (
-              <>
-                <Link to={`/workspace/${currentWorkspace.id}/overview`} className="text-gray-700 hover:text-blue-600 transition-colors font-medium">Overview</Link>
-                <Link to={`/workspace/${currentWorkspace.id}/transactions`} className="text-gray-700 hover:text-blue-600 transition-colors font-medium">Transactions</Link>
-                <Link to={`/workspace/${currentWorkspace.id}/assets`} className="text-gray-700 hover:text-blue-600 transition-colors font-medium">Assets</Link>
-              </>
-            )}
-          </nav>
-          <div className="flex items-center space-x-4">
-            <button className="btn-secondary text-sm">Settings</button>
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-700">U</span>
-            </div>
-          </div>
+    <header style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      background: 'rgba(8,8,16,0.85)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+    }}>
+      <div style={{
+        maxWidth: 1280,
+        margin: '0 auto',
+        padding: '0 24px',
+        height: 56,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        {/* Logo + workspace */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 800, color: '#fff', letterSpacing: '-0.05em',
+              flexShrink: 0,
+            }}>AB</div>
+            <span style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9', letterSpacing: '-0.01em' }}>
+              ArbitrageBot
+            </span>
+          </Link>
+
+          <span style={{
+            background: 'rgba(0,255,136,0.1)',
+            border: '1px solid rgba(0,255,136,0.3)',
+            color: '#00ff88',
+            fontSize: 10,
+            padding: '2px 8px',
+            borderRadius: 20,
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.05em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}>
+            <span className="live-dot" style={{ width: 5, height: 5, borderRadius: '50%', background: '#00ff88', display: 'inline-block' }} />
+            LIVE
+          </span>
+
+          {isWorkspaceRoute && currentWorkspace && (
+            <span style={{
+              color: 'var(--text-muted)',
+              fontSize: 12,
+              fontFamily: 'var(--font-mono)',
+              paddingLeft: 8,
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              {currentWorkspace.name}
+            </span>
+          )}
+        </div>
+
+        {/* Nav */}
+        <nav style={{ display: 'flex', gap: 2 }}>
+          {[
+            { label: 'Dashboard', to: '/' },
+            ...(isWorkspaceRoute && currentWorkspace ? [
+              { label: 'Overview', to: `/workspace/${currentWorkspace.id}/overview` },
+              { label: 'Transactions', to: `/workspace/${currentWorkspace.id}/transactions` },
+              { label: 'Assets', to: `/workspace/${currentWorkspace.id}/assets` },
+            ] : []),
+          ].map(({ label, to }) => {
+            const active = location.pathname === to || (to !== '/' && location.pathname.startsWith(to))
+            return (
+              <Link key={label} to={to} style={{
+                background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
+                border: 'none',
+                color: active ? '#f1f5f9' : '#475569',
+                padding: '6px 14px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'all 0.15s',
+              }}
+                onMouseEnter={e => { if (!active) (e.target as HTMLElement).style.color = '#94a3b8' }}
+                onMouseLeave={e => { if (!active) (e.target as HTMLElement).style.color = '#475569' }}
+              >
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* Right actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <ThemeToggle />
+          <button className="btn-secondary" style={{ fontSize: 12, padding: '6px 14px' }}>
+            Settings
+          </button>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700, color: '#fff',
+          }}>U</div>
         </div>
       </div>
     </header>

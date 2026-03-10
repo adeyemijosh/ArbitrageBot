@@ -5,246 +5,133 @@ import { useGetTVLDataQuery, useGetProfitLossDataQuery, useGetTransactionsQuery 
 import LoadingSpinner from '../Common/LoadingSpinner'
 import ErrorBoundary from '../Common/ErrorBoundary'
 
+const typeColor: Record<string, string> = {
+  tvl: '#3b82f6', profit: '#00ff88', transactions: '#a855f7',
+}
+const typeBg: Record<string, string> = {
+  tvl: 'rgba(59,130,246,0.1)', profit: 'rgba(0,255,136,0.08)', transactions: 'rgba(168,85,247,0.1)',
+}
+
 const History: React.FC = () => {
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
   const workspaceId = currentWorkspace?.id || ''
-  
+
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h')
   const [dataType, setDataType] = useState<'all' | 'tvl' | 'profit' | 'transactions'>('all')
 
-  // Get historical data based on selected type
-  const {
-    data: tvlData,
-    isLoading: tvlLoading,
-    error: tvlError
-  } = useGetTVLDataQuery(
-    { walletAddress: workspaceId, type: 'tvl', timeRange: timeRange, interval: '1h' },
+  const { data: tvlData, isLoading: tvlLoading, error: tvlError } = useGetTVLDataQuery(
+    { walletAddress: workspaceId, type: 'tvl', timeRange, interval: '1h' } as any,
     { skip: !workspaceId || (dataType !== 'all' && dataType !== 'tvl') }
   )
-
-  const {
-    data: profitData,
-    isLoading: profitLoading,
-    error: profitError
-  } = useGetProfitLossDataQuery(
-    { walletAddress: workspaceId, type: 'profit-loss', timeRange: timeRange, interval: '1h' },
+  const { data: profitData, isLoading: profitLoading, error: profitError } = useGetProfitLossDataQuery(
+    { walletAddress: workspaceId, type: 'profit-loss', timeRange, interval: '1h' } as any,
     { skip: !workspaceId || (dataType !== 'all' && dataType !== 'profit') }
   )
-
-  const {
-    data: transactionsData,
-    isLoading: transactionsLoading,
-    error: transactionsError
-  } = useGetTransactionsQuery(
+  const { data: transactionsData, isLoading: transactionsLoading, error: transactionsError } = useGetTransactionsQuery(
     { walletAddress: workspaceId, page: 1, limit: 100 },
     { skip: !workspaceId || (dataType !== 'all' && dataType !== 'transactions') }
   )
 
-  // Combine and format historical data
   const historicalData = useMemo(() => {
     const data: any[] = []
-    
-    if (tvlData) {
-      data.push(...tvlData.map((point, index) => ({
-        id: `tvl-${point.timestamp}`,
-        timestamp: new Date(point.timestamp).toISOString(),
-        type: 'tvl',
-        value: point.tvl,
-        metadata: { usdValue: point.usdValue }
-      })))
-    }
-    
-    if (profitData) {
-      data.push(...profitData.map((point, index) => ({
-        id: `profit-${point.timestamp}`,
-        timestamp: new Date(point.timestamp).toISOString(),
-        type: 'profit',
-        value: point.netProfit,
-        metadata: { profit: point.profit, loss: point.loss }
-      })))
-    }
-    
-    if (transactionsData?.data) {
-      data.push(...transactionsData.data.map((tx, index) => ({
-        id: tx.hash,
-        timestamp: tx.timestamp,
-        type: 'transactions',
-        value: 1, // Count transactions
-        metadata: { hash: tx.hash, from: tx.from, to: tx.to, value: tx.value }
-      })))
-    }
-    
+    if (tvlData) data.push(...(tvlData as any[]).map(p => ({ id: `tvl-${p.timestamp}`, timestamp: new Date(p.timestamp).toISOString(), type: 'tvl', value: p.tvl, metadata: { usdValue: p.usdValue } })))
+    if (profitData) data.push(...(profitData as any[]).map(p => ({ id: `profit-${p.timestamp}`, timestamp: new Date(p.timestamp).toISOString(), type: 'profit', value: p.netProfit, metadata: { profit: p.profit, loss: p.loss } })))
+    if ((transactionsData as any)?.data) data.push(...(transactionsData as any).data.map((tx: any) => ({ id: tx.hash, timestamp: tx.timestamp, type: 'transactions', value: 1, metadata: { hash: tx.hash } })))
     return data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
   }, [tvlData, profitData, transactionsData])
 
   const isLoading = tvlLoading || profitLoading || transactionsLoading
-  const error = tvlError || profitError || transactionsError
+  const hasError = tvlError || profitError || transactionsError
 
-  const formatDataValue = (value: number, type: string) => {
-    if (type === 'tvl' || type === 'profit') {
-      return `$${value.toLocaleString()}`
-    }
-    return value.toLocaleString()
-  }
+  const fmt = (v: number, type: string) => (type === 'tvl' || type === 'profit') ? `$${v.toLocaleString()}` : v.toLocaleString()
 
   if (!currentWorkspace) {
     return (
-      <div className="card">
-        <p className="text-center text-gray-500 py-8">Please select a workspace to view history.</p>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#475569', fontSize: 13 }}>Please select a workspace to view history.</p>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
         {/* Controls */}
         <div className="card">
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1h">Last Hour</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
-              <select
-                value={dataType}
-                onChange={(e) => setDataType(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Data</option>
-                <option value="tvl">TVL</option>
-                <option value="profit">Profit</option>
-                <option value="transactions">Transactions</option>
-              </select>
-            </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+            {[
+              { label: 'Time Range', value: timeRange, setter: setTimeRange, options: [['1h','Last Hour'],['24h','Last 24h'],['7d','7 Days'],['30d','30 Days']] },
+              { label: 'Data Type', value: dataType, setter: setDataType, options: [['all','All Data'],['tvl','TVL'],['profit','Profit'],['transactions','Transactions']] },
+            ].map(({ label, value, setter, options }) => (
+              <div key={label}>
+                <p className="section-label" style={{ marginBottom: 6 }}>{label}</p>
+                <select className="dark-select" value={value} onChange={e => (setter as any)(e.target.value)}>
+                  {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Records</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {historicalData?.length || 0}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-lg">📊</span>
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {[
+            { label: 'Total Records', value: historicalData.length, accent: '#3b82f6', icon: '◈' },
+            {
+              label: 'Date Range',
+              value: historicalData.length > 0
+                ? `${new Date(historicalData[historicalData.length - 1].timestamp).toLocaleDateString()} → ${new Date(historicalData[0].timestamp).toLocaleDateString()}`
+                : 'N/A',
+              accent: '#00ff88', icon: '◷',
+            },
+            { label: 'Update Frequency', value: 'Real-time', accent: '#a855f7', icon: '⚡' },
+          ].map(({ label, value, accent, icon }) => (
+            <div key={label} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, width: 90, height: 90, pointerEvents: 'none', background: `radial-gradient(circle at top right, ${accent}15, transparent 70%)` }} />
+              <p className="section-label" style={{ marginBottom: 8 }}>{label}</p>
+              <p style={{ color: '#f1f5f9', fontSize: typeof value === 'string' && value.includes('→') ? 13 : 24, fontWeight: 700, letterSpacing: '-0.02em' }}>{value}</p>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Data Range</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {historicalData && historicalData.length > 0 
-                    ? `${new Date(historicalData[0].timestamp).toLocaleDateString()} - ${new Date(historicalData[historicalData.length - 1].timestamp).toLocaleDateString()}`
-                    : 'N/A'
-                  }
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-lg">📅</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Update Frequency</p>
-                <p className="text-2xl font-bold text-blue-600">Real-time</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 text-lg">⚡</span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Historical Data Table */}
+        {/* Table */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Historical Data</h3>
-          
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Historical Data</p>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div style={{ padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
               <LoadingSpinner size="md" text="Loading historical data..." />
             </div>
-          ) : error ? (
-            <div className="text-red-500 text-center py-8">
-              Error loading historical data
-            </div>
-          ) : historicalData && historicalData.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Timestamp
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Value
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Change
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Metadata
-                    </th>
-                  </tr>
+          ) : hasError ? (
+            <p style={{ color: '#ef4444', textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Error loading historical data</p>
+          ) : historicalData.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="dark-table">
+                <thead>
+                  <tr>{['Timestamp', 'Type', 'Value', 'Change', 'Metadata'].map(h => <th key={h}>{h}</th>)}</tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {historicalData.map((record, index) => {
-                    const prevValue = index > 0 ? historicalData[index - 1].value : record.value
-                    const change = record.value - prevValue
-                    const changePercent = prevValue !== 0 ? (change / Math.abs(prevValue)) * 100 : 0
-                    
+                <tbody>
+                  {historicalData.map((record, i) => {
+                    const prev = i > 0 ? historicalData[i - 1].value : record.value
+                    const change = record.value - prev
+                    const changePct = prev !== 0 ? (change / Math.abs(prev)) * 100 : 0
                     return (
-                      <tr key={record.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(record.timestamp).toLocaleString()}
+                      <tr key={record.id}>
+                        <td className="mono" style={{ fontSize: 11 }}>{new Date(record.timestamp).toLocaleString()}</td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex', padding: '2px 10px', borderRadius: 20, fontSize: 10,
+                            fontFamily: 'var(--font-mono)', background: typeBg[record.type], color: typeColor[record.type],
+                            border: `1px solid ${typeColor[record.type]}30`,
+                          }}>{record.type}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            record.type === 'tvl' ? 'bg-blue-100 text-blue-800' :
-                            record.type === 'profit' ? 'bg-green-100 text-green-800' :
-                            record.type === 'transactions' ? 'bg-purple-100 text-purple-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {record.type}
+                        <td className="mono" style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600 }}>{fmt(record.value, record.type)}</td>
+                        <td>
+                          <span className="mono" style={{ color: change >= 0 ? '#00ff88' : '#ef4444', fontSize: 11 }}>
+                            {change >= 0 ? '+' : ''}{fmt(change, record.type)} ({changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%)
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatDataValue(record.value, record.type)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm ${
-                            change >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {change >= 0 ? '+' : ''}{formatDataValue(change, record.type)} ({changePercent >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {record.metadata ? JSON.stringify(record.metadata) : 'N/A'}
-                        </td>
+                        <td className="mono" style={{ color: '#374151', fontSize: 10 }}>{record.metadata ? JSON.stringify(record.metadata) : 'N/A'}</td>
                       </tr>
                     )
                   })}
@@ -252,27 +139,22 @@ const History: React.FC = () => {
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              No historical data found for the selected filters.
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p style={{ color: '#374151', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No historical data found for the selected filters</p>
             </div>
           )}
         </div>
 
-        {/* Export Options */}
+        {/* Export */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Options</h3>
-          <div className="flex space-x-4">
-            <button className="btn-primary">
-              Export CSV
-            </button>
-            <button className="btn-secondary">
-              Export JSON
-            </button>
-            <button className="btn-secondary">
-              Generate Report
-            </button>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 14 }}>Export Options</p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn-primary" style={{ fontSize: 13 }}>Export CSV</button>
+            <button className="btn-secondary" style={{ fontSize: 13 }}>Export JSON</button>
+            <button className="btn-secondary" style={{ fontSize: 13 }}>Generate Report</button>
           </div>
         </div>
+
       </div>
     </ErrorBoundary>
   )

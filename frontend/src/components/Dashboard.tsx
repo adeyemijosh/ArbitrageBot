@@ -3,199 +3,226 @@ import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { RootState } from '../store/store'
 import { Workspace } from '../types'
+import TVLChart from './Charts/TVLChart'
+import ProfitLossChart from './Charts/ProfitLossChart'
 
+// ── Mock chart data (replace with real Redux selectors when available) ───────
+const mockTVLData = Array.from({ length: 48 }, (_, i) => ({
+  timestamp: Date.now() - (47 - i) * 1800000,
+  tvl: 42000 + Math.sin(i * 0.3) * 3000 + Math.random() * 800 + i * 40,
+  usdValue: 42000 + Math.sin(i * 0.3) * 3000 + Math.random() * 800 + i * 40,
+}))
+
+const mockProfitLoss = Array.from({ length: 14 }, (_, i) => ({
+  timestamp: Date.now() - (13 - i) * 86400000,
+  profit: Math.random() * 800 + 200,
+  loss: Math.random() * 300 + 50,
+  netProfit: Math.random() * 500 - 80,
+}))
+
+const mockActivity = [
+  { icon: '◈', color: '#00ff88', label: 'Arbitrage Opportunity Found', sub: 'WETH/DAI pair · Profit: 0.015 ETH', time: '2m ago' },
+  { icon: '▲', color: '#3b82f6', label: 'TVL Update', sub: 'Total Value Locked: $45,230.50', time: '15m ago' },
+  { icon: '⬡', color: '#a855f7', label: 'Contract Deployment', sub: 'New arbitrage contract deployed', time: '1h ago' },
+  { icon: '◈', color: '#00ff88', label: 'Arbitrage Executed', sub: 'USDC/ETH · Profit: 0.008 ETH', time: '2h ago' },
+  { icon: '▼', color: '#ef4444', label: 'Gas Spike Detected', sub: 'Paused operations — 245 gwei', time: '3h ago' },
+]
+
+// ── Stat Card ────────────────────────────────────────────────────────────────
+interface StatCardProps {
+  label: string
+  value: string
+  change?: string
+  changePositive?: boolean
+  icon: string
+  accent: string
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, change, changePositive, icon, accent }) => (
+  <div className="card" style={{ flex: 1, overflow: 'hidden' }}>
+    {/* Glow corner */}
+    <div style={{
+      position: 'absolute', top: 0, right: 0, width: 120, height: 120, pointerEvents: 'none',
+      background: `radial-gradient(circle at top right, ${accent}18, transparent 70%)`,
+    }} />
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div>
+        <p className="section-label" style={{ marginBottom: 8 }}>{label}</p>
+        <p style={{ color: '#f1f5f9', fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>
+          {value}
+        </p>
+        {change && (
+          <p style={{
+            color: changePositive === false ? '#ef4444' : '#00ff88',
+            fontSize: 11, marginTop: 6, fontFamily: 'var(--font-mono)',
+          }}>{change}</p>
+        )}
+      </div>
+      <div style={{
+        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+        background: `${accent}18`, border: `1px solid ${accent}35`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 17, color: accent,
+      }}>{icon}</div>
+    </div>
+  </div>
+)
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
-  const { workspaces, loading } = useSelector((state: RootState) => state.workspace)
+  const { workspaces } = useSelector((state: RootState) => state.workspace)
+  const [timeRange, setTimeRange] = React.useState<'24h' | '7d' | '30d'>('24h')
 
   const mockWorkspaces: Workspace[] = [
     {
-      id: 'wallet-1',
-      name: 'Main Wallet',
-      type: 'wallet',
+      id: 'wallet-1', name: 'Main Wallet', type: 'wallet',
       address: '0x742d35Cc6634C0532925a3b8D',
-      createdAt: '2024-01-15T10:30:00Z',
-      updatedAt: '2024-01-20T15:45:00Z',
+      createdAt: '2024-01-15T10:30:00Z', updatedAt: '2024-01-20T15:45:00Z',
+      timestamp: '', value: undefined, metadata: undefined,
+      priceChange24h: undefined, symbol: undefined, volume: 0,
+      price: undefined, marketCap: undefined, liquidity: undefined,
     },
     {
-      id: 'contract-1',
-      name: 'Arbitrage Contract',
-      type: 'contract',
+      id: 'contract-1', name: 'Arbitrage Contract', type: 'contract',
       address: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
-      createdAt: '2024-01-10T08:15:00Z',
-      updatedAt: '2024-01-19T12:30:00Z',
+      createdAt: '2024-01-10T08:15:00Z', updatedAt: '2024-01-19T12:30:00Z',
+      timestamp: '', value: undefined, metadata: undefined,
+      priceChange24h: undefined, symbol: undefined, volume: 0,
+      price: undefined, marketCap: undefined, liquidity: undefined,
     },
   ]
 
-  const currentWorkspaces = workspaces.length > 0 ? workspaces : mockWorkspaces
+  const displayWorkspaces = workspaces.length > 0 ? workspaces : mockWorkspaces
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+      {/* Header row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
+            Dashboard
+          </h1>
+          <p style={{ color: '#475569', fontSize: 13, marginTop: 4 }}>
             Monitor your arbitrage operations and workspace performance
           </p>
         </div>
-        <div className="flex space-x-3">
-          <button className="btn-secondary">
-            Refresh Data
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            ↻ Refresh
           </button>
           <button className="btn-primary">
-            Add Workspace
+            + Add Workspace
           </button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stat Cards */}
+      <div style={{ display: 'flex', gap: 16 }}>
+        <StatCard label="Total TVL" value="$45,230.50" change="+12.5% (24h)" icon="◈" accent="#3b82f6" />
+        <StatCard label="Total Profit" value="$2,150.75" change="+8.3% (24h)" icon="▲" accent="#00ff88" />
+        <StatCard label="Active Workspaces" value={String(displayWorkspaces.length)} change="Real-time monitoring" icon="⬡" accent="#a855f7" />
+      </div>
+
+      {/* Charts Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+        {/* TVL Chart */}
         <div className="card">
-          <div className="flex items-center justify-between">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
-              <p className="text-sm font-medium text-gray-600">Total TVL</p>
-              <p className="text-2xl font-bold text-gray-900">$45,230.50</p>
-              <p className="text-xs text-green-600 mt-1">+12.5% (24h)</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>TVL Over Time</p>
+              <p className="mono" style={{ color: '#374151', fontSize: 11, marginTop: 2 }}>Total Value Locked</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-blue-600 text-lg">💰</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['24h', '7d', '30d'] as const).map(r => (
+                <button key={r} onClick={() => setTimeRange(r)} style={{
+                  background: timeRange === r ? 'rgba(59,130,246,0.15)' : 'transparent',
+                  border: timeRange === r ? '1px solid rgba(59,130,246,0.35)' : '1px solid transparent',
+                  color: timeRange === r ? '#3b82f6' : '#475569',
+                  padding: '3px 10px', borderRadius: 6,
+                  fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)',
+                  transition: 'all 0.15s',
+                }}>{r}</button>
+              ))}
             </div>
           </div>
+          <TVLChart data={mockTVLData} height={200} />
         </div>
 
+        {/* P&L Chart */}
         <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Profit</p>
-              <p className="text-2xl font-bold text-gray-900">$2,150.75</p>
-              <p className="text-xs text-green-600 mt-1">+8.3% (24h)</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <span className="text-green-600 text-lg">📈</span>
-            </div>
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>Profit / Loss</p>
+            <p className="mono" style={{ color: '#374151', fontSize: 11, marginTop: 2 }}>Daily breakdown + net trend</p>
           </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Workspaces</p>
-              <p className="text-2xl font-bold text-gray-900">{currentWorkspaces.length}</p>
-              <p className="text-xs text-gray-600 mt-1">Real-time monitoring</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <span className="text-purple-600 text-lg">📊</span>
-            </div>
-          </div>
+          <ProfitLossChart data={mockProfitLoss} height={200} />
         </div>
       </div>
 
-      {/* Workspaces Grid */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Workspaces</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentWorkspaces.map((workspace) => (
-            <Link
-              key={workspace.id}
-              to={`/workspace/${workspace.id}`}
-              className="card hover:shadow-md transition-shadow duration-200 group"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    workspace.type === 'wallet' 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'bg-green-100 text-green-600'
-                  }`}>
-                    <span className="text-lg">
-                      {workspace.type === 'wallet' ? '💼' : '🏗️'}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {workspace.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 truncate max-w-xs">
-                      {workspace.address}
-                    </p>
-                  </div>
-                </div>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  workspace.type === 'wallet' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {workspace.type === 'wallet' ? 'Wallet' : 'Contract'}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Created:</span>
-                  <span className="ml-2 text-gray-900">
-                    {new Date(workspace.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Last Updated:</span>
-                  <span className="ml-2 text-gray-900">
-                    {new Date(workspace.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
+      {/* Workspaces + Activity */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
-              <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100">
-                <span className="text-xs text-gray-500">View Details</span>
-                <span className="text-blue-600 group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
-              </div>
-            </Link>
-          ))}
+        {/* Workspaces */}
+        <div className="card">
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 14 }}>Your Workspaces</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {displayWorkspaces.map(ws => (
+              <Link key={ws.id} to={`/workspace/${ws.id}`} style={{ textDecoration: 'none' }}>
+                <div className="card card-hover" style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{ws.name}</span>
+                        <span className={`badge ${ws.type === 'wallet' ? 'badge-blue' : 'badge-green'}`}>
+                          {ws.type}
+                        </span>
+                      </div>
+                      <p className="mono" style={{ color: '#374151', fontSize: 10 }}>
+                        {ws.address.slice(0, 22)}…
+                      </p>
+                      <p className="mono" style={{ color: '#374151', fontSize: 10, marginTop: 4 }}>
+                        Updated {new Date(ws.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span style={{ color: '#374151', fontSize: 16 }}>→</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Recent Activity */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600">✅</span>
+        {/* Recent Activity */}
+        <div className="card">
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 14 }}>Recent Activity</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {mockActivity.map((item, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '9px 10px', borderRadius: 10, cursor: 'pointer', transition: 'background 0.15s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: `${item.color}14`, border: `1px solid ${item.color}28`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: item.color, fontSize: 13,
+                }}>{item.icon}</div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>{item.label}</p>
+                  <p className="mono" style={{
+                    fontSize: 10, color: '#475569', margin: 0,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{item.sub}</p>
+                </div>
+
+                <span className="mono" style={{ fontSize: 10, color: '#374151', flexShrink: 0 }}>{item.time}</span>
               </div>
-              <div>
-                <p className="font-medium">Arbitrage Opportunity Found</p>
-                <p className="text-sm text-gray-500">WETH/DAI pair - Profit: 0.015 ETH</p>
-              </div>
-            </div>
-            <span className="text-xs text-gray-500">2 min ago</span>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600">📊</span>
-              </div>
-              <div>
-                <p className="font-medium">TVL Update</p>
-                <p className="text-sm text-gray-500">Total Value Locked: $45,230.50</p>
-              </div>
-            </div>
-            <span className="text-xs text-gray-500">15 min ago</span>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-purple-600">🔄</span>
-              </div>
-              <div>
-                <p className="font-medium">Contract Deployment</p>
-                <p className="text-sm text-gray-500">New arbitrage contract deployed</p>
-              </div>
-            </div>
-            <span className="text-xs text-gray-500">1 hour ago</span>
+            ))}
           </div>
         </div>
       </div>

@@ -6,10 +6,7 @@ interface ErrorBoundaryState {
   errorInfo?: React.ErrorInfo
 }
 
-class ErrorBoundary extends React.Component<
-  React.PropsWithChildren<{}>,
-  ErrorBoundaryState
-> {
+class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, ErrorBoundaryState> {
   constructor(props: React.PropsWithChildren<{}>) {
     super(props)
     this.state = { hasError: false }
@@ -20,47 +17,58 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.setState({
-      error,
-      errorInfo
-    })
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    this.setState({ error, errorInfo })
+    console.error('ErrorBoundary:', error, errorInfo)
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
-              <span className="text-red-600 text-xl">⚠️</span>
-            </div>
-            <h2 className="mt-4 text-lg font-semibold text-gray-900 text-center">
+        <div style={{
+          minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--bg-primary)',
+        }}>
+          <div style={{
+            maxWidth: 400, width: '100%',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: 16, padding: 28,
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, margin: '0 auto 16px',
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20,
+            }}>⚠</div>
+
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9', textAlign: 'center', marginBottom: 8 }}>
               Something went wrong
             </h2>
-            <p className="mt-2 text-sm text-gray-600 text-center">
-              We're sorry, but something unexpected happened. Please try refreshing the page.
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 20 }}>
+              An unexpected error occurred. Please refresh the page.
             </p>
-            <div className="mt-4 flex space-x-3">
-              <button
-                onClick={() => window.location.reload()}
-                className="flex-1 btn-primary"
-              >
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={() => window.location.reload()}>
                 Refresh Page
               </button>
-              <button
-                onClick={() => this.setState({ hasError: false, error: undefined, errorInfo: undefined })}
-                className="flex-1 btn-secondary"
-              >
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => this.setState({ hasError: false })}>
                 Try Again
               </button>
             </div>
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mt-4">
-                <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
-                  Error Details (Development)
+              <details style={{ marginTop: 16 }}>
+                <summary style={{ cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  Error Details
                 </summary>
-                <pre className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded overflow-auto max-h-32">
+                <pre style={{
+                  marginTop: 8, fontSize: 10, color: '#ef4444',
+                  background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)',
+                  borderRadius: 8, padding: 10, overflow: 'auto', maxHeight: 120,
+                  fontFamily: 'var(--font-mono)',
+                }}>
                   {this.state.error.toString()}
                   {this.state.errorInfo?.componentStack}
                 </pre>
@@ -70,7 +78,6 @@ class ErrorBoundary extends React.Component<
         </div>
       )
     }
-
     return this.props.children
   }
 }

@@ -32,11 +32,27 @@ function App() {
             </Route>
           </Route>
         </Routes>
+
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: { background: '#363636', color: '#fff' },
+            style: {
+              background: 'rgba(15,15,25,0.95)',
+              color: '#f1f5f9',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 10,
+              fontSize: 13,
+              fontFamily: 'var(--font-display)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            },
+            success: {
+              iconTheme: { primary: '#00ff88', secondary: '#080810' },
+            },
+            error: {
+              iconTheme: { primary: '#ef4444', secondary: '#080810' },
+            },
           }}
         />
       </div>

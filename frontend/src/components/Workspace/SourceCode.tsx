@@ -5,227 +5,186 @@ import { useGetWorkspacesQuery } from '../../store/api/workspaceApi'
 import LoadingSpinner from '../Common/LoadingSpinner'
 import ErrorBoundary from '../Common/ErrorBoundary'
 
+const visibilityColor: Record<string, string> = {
+  public: '#3b82f6', external: '#00ff88', private: '#ef4444', internal: '#f59e0b',
+}
+
 const SourceCode: React.FC = () => {
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
   const workspaceId = currentWorkspace?.id || ''
-  
-  const [selectedMethod, setSelectedMethod] = useState<string>('')
-  const [methodParams, setMethodParams] = useState<string>('')
-  const [senderAddress, setSenderAddress] = useState<string>('')
+
+  const [selectedMethod, setSelectedMethod] = useState('')
+  const [methodParams, setMethodParams] = useState('')
+  const [senderAddress, setSenderAddress] = useState('')
 
   const { data: contractSource, isLoading, error } = useGetWorkspacesQuery(undefined, {
-    skip: !workspaceId || currentWorkspace.type !== 'contract'
+    skip: !workspaceId || currentWorkspace?.type !== 'contract',
   })
 
-  const [interactWithContract, { isLoading: interacting }] = useGetWorkspacesQuery
-
-  const handleContractInteraction = async () => {
-    if (!workspaceId || !selectedMethod) return
-
-    try {
-      await interactWithContract({
-        workspaceId,
-        method: selectedMethod,
-        params: methodParams ? JSON.parse(methodParams) : [],
-        sender: senderAddress || undefined
-      }).unwrap()
-    } catch (error) {
-      console.error('Failed to interact with contract:', error)
-    }
-  }
+  const source = contractSource as any
 
   if (!currentWorkspace) {
     return (
-      <div className="card">
-        <p className="text-center text-gray-500 py-8">Please select a workspace to view source code.</p>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#475569', fontSize: 13 }}>Please select a workspace to view source code.</p>
       </div>
     )
   }
 
   if (currentWorkspace.type !== 'contract') {
     return (
-      <div className="card">
-        <div className="text-center py-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Source Code View</h3>
-          <p className="text-gray-600">This view is only available for contract workspaces.</p>
-          <p className="text-sm text-gray-500 mt-2">Selected workspace type: {currentWorkspace.type}</p>
-        </div>
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Contract Workspaces Only</p>
+        <p style={{ color: '#475569', fontSize: 13 }}>This view is only available for contract workspaces.</p>
+        <p className="mono" style={{ color: '#374151', fontSize: 11, marginTop: 6 }}>Current type: {currentWorkspace.type}</p>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
-        {/* Contract Information */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* Contract Info */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 14 }}>Contract Information</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Contract Address</h4>
-              <p className="text-sm text-gray-900 font-mono">{currentWorkspace.address}</p>
+              <p className="section-label" style={{ marginBottom: 6 }}>Contract Address</p>
+              <p className="mono" style={{ color: '#6366f1', fontSize: 12, wordBreak: 'break-all' }}>{currentWorkspace.address}</p>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Contract Type</h4>
-              <p className="text-sm text-gray-900 capitalize">{currentWorkspace.type}</p>
+              <p className="section-label" style={{ marginBottom: 6 }}>Contract Type</p>
+              <span className="badge badge-green">{currentWorkspace.type}</span>
             </div>
           </div>
         </div>
 
-        {/* Contract Interaction Panel */}
+        {/* Interaction Panel */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Interaction</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Contract Interaction</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
-              <select
-                value={selectedMethod}
-                onChange={(e) => setSelectedMethod(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              >
+              <p className="section-label" style={{ marginBottom: 6 }}>Method</p>
+              <select className="dark-select" value={selectedMethod} onChange={e => setSelectedMethod(e.target.value)} style={{ width: '100%' }}>
                 <option value="">Select a method</option>
-                {contractSource?.methods?.map((method) => (
-                  <option key={method.name} value={method.name}>
-                    {method.name} ({method.visibility})
-                  </option>
+                {source?.methods?.map((m: any) => (
+                  <option key={m.name} value={m.name}>{m.name} ({m.visibility})</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Parameters (JSON)</label>
-              <input
-                type="text"
-                value={methodParams}
-                onChange={(e) => setMethodParams(e.target.value)}
-                placeholder='["param1", "param2"]'
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              />
+              <p className="section-label" style={{ marginBottom: 6 }}>Parameters (JSON)</p>
+              <input className="dark-input" type="text" value={methodParams}
+                onChange={e => setMethodParams(e.target.value)} placeholder='["param1", "param2"]' />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sender Address (Optional)</label>
-              <input
-                type="text"
-                value={senderAddress}
-                onChange={(e) => setSenderAddress(e.target.value)}
-                placeholder="0x..."
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              />
+              <p className="section-label" style={{ marginBottom: 6 }}>Sender Address (optional)</p>
+              <input className="dark-input" type="text" value={senderAddress}
+                onChange={e => setSenderAddress(e.target.value)} placeholder="0x..." />
             </div>
           </div>
-          <div className="mt-4 flex space-x-3">
-            <button
-              onClick={handleContractInteraction}
-              disabled={interacting || !selectedMethod}
-              className="btn-primary"
-            >
-              {interacting ? 'Interacting...' : 'Execute Method'}
-            </button>
-            <button className="btn-secondary">
-              View ABI
-            </button>
-            <button className="btn-secondary">
-              View Bytecode
-            </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn-primary" disabled={!selectedMethod} style={{ fontSize: 13 }}>Execute Method</button>
+            <button className="btn-secondary" style={{ fontSize: 13 }}>View ABI</button>
+            <button className="btn-secondary" style={{ fontSize: 13 }}>View Bytecode</button>
           </div>
         </div>
 
-        {/* Source Code Display */}
+        {/* Source Code */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Source Code</h3>
-          
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>Source Code</p>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div style={{ padding: '48px 0', display: 'flex', justifyContent: 'center' }}>
               <LoadingSpinner size="md" text="Loading contract source..." />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-center py-8">
-              Error loading contract source
-            </div>
-          ) : contractSource ? (
-            <div className="space-y-6">
-              {/* Contract Metadata */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Contract Metadata</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Name:</span>
-                    <span className="ml-2 font-medium">{contractSource.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Compiler:</span>
-                    <span className="ml-2 font-medium">{contractSource.compilerVersion}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Optimization:</span>
-                    <span className="ml-2 font-medium">{contractSource.optimization ? 'Enabled' : 'Disabled'}</span>
-                  </div>
-                </div>
-              </div>
+            <p style={{ color: '#ef4444', textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Error loading contract source</p>
+          ) : source ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-              {/* Methods List */}
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Contract Methods</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {contractSource.methods?.map((method) => (
-                    <div key={method.name} className="bg-white border border-gray-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-mono text-sm font-medium text-gray-900">
-                            {method.name}
-                          </span>
-                          <span className={`ml-2 inline-flex px-2 py-1 text-xs rounded ${
-                            method.visibility === 'public' ? 'bg-blue-100 text-blue-800' :
-                            method.visibility === 'external' ? 'bg-green-100 text-green-800' :
-                            method.visibility === 'private' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {method.visibility}
-                          </span>
-                        </div>
-                        <span className={`text-xs ${
-                          method.stateMutability === 'view' || method.stateMutability === 'pure' 
-                            ? 'text-green-600' 
-                            : 'text-blue-600'
-                        }`}>
-                          {method.stateMutability}
-                        </span>
-                      </div>
-                      {method.parameters && method.parameters.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-600">
-                          Params: {method.parameters.map(p => p.type).join(', ')}
-                        </div>
-                      )}
+              {/* Metadata */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 14 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 10 }}>Contract Metadata</p>
+                <div style={{ display: 'flex', gap: 32 }}>
+                  {[['Name', source.name], ['Compiler', source.compilerVersion], ['Optimization', source.optimization ? 'Enabled' : 'Disabled']].map(([k, v]) => (
+                    <div key={k}>
+                      <p className="section-label">{k}</p>
+                      <p className="mono" style={{ color: '#f1f5f9', fontSize: 12, marginTop: 3 }}>{v}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Source Code */}
+              {/* Methods */}
+              {source.methods?.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 10 }}>Contract Methods</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {source.methods.map((method: any) => (
+                      <div key={method.name} style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: 8, padding: 10,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: '#f1f5f9' }}>{method.name}</span>
+                          <span style={{
+                            padding: '1px 8px', borderRadius: 20, fontSize: 9,
+                            fontFamily: 'var(--font-mono)',
+                            background: `${visibilityColor[method.visibility] || '#374151'}18`,
+                            color: visibilityColor[method.visibility] || '#94a3b8',
+                            border: `1px solid ${visibilityColor[method.visibility] || '#374151'}30`,
+                          }}>{method.visibility}</span>
+                        </div>
+                        <p className="mono" style={{ fontSize: 10, color: method.stateMutability === 'view' || method.stateMutability === 'pure' ? '#00ff88' : '#3b82f6' }}>
+                          {method.stateMutability}
+                        </p>
+                        {method.parameters?.length > 0 && (
+                          <p className="mono" style={{ fontSize: 10, color: '#374151', marginTop: 3 }}>
+                            {method.parameters.map((p: any) => p.type).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Source */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Source Code</h4>
-                <div className="bg-gray-900 rounded-lg p-4">
-                  <pre className="text-sm text-gray-100 overflow-auto max-h-96">
-                    {contractSource.sourceCode || 'Source code not available'}
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 10 }}>Solidity Source</p>
+                <div style={{
+                  background: '#0a0a14', border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 10, padding: 16, maxHeight: 360, overflow: 'auto',
+                }}>
+                  <pre className="mono" style={{ fontSize: 11, color: '#94a3b8', margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {source.sourceCode || 'Source code not available'}
                   </pre>
                 </div>
               </div>
 
               {/* ABI */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">ABI</h4>
-                <div className="bg-gray-900 rounded-lg p-4">
-                  <pre className="text-sm text-gray-100 overflow-auto max-h-64">
-                    {JSON.stringify(contractSource.abi, null, 2)}
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 10 }}>ABI</p>
+                <div style={{
+                  background: '#0a0a14', border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 10, padding: 16, maxHeight: 220, overflow: 'auto',
+                }}>
+                  <pre className="mono" style={{ fontSize: 11, color: '#6366f1', margin: 0 }}>
+                    {JSON.stringify(source.abi, null, 2)}
                   </pre>
                 </div>
               </div>
+
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              No contract source available.
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p style={{ color: '#374151', fontFamily: 'var(--font-mono)', fontSize: 13 }}>No contract source available</p>
             </div>
           )}
         </div>
+
       </div>
     </ErrorBoundary>
   )
