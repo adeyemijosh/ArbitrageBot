@@ -115,4 +115,4 @@ npx hardhat run scripts/deploy.js --network <your-network>
 
 ## Disclaimer
 
-This is a Mvp. currently working on more features 
+This is an MVP, more features shipping soon 
