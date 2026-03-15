@@ -1,13 +1,22 @@
-# Uniswap V3 Arbitrage Bot
+# Arbitrage Bot
 
-This project contains a simplified, proof-of-concept arbitrage bot that interacts with Uniswap V3. It includes a smart contract for executing arbitrage trades and a backend bot for monitoring prices.
+A comprehensive arbitrage bot system featuring smart contract execution, real-time price monitoring, and an enhanced modern frontend dashboard. This project provides a complete solution for automated arbitrage trading with professional UI/UX design.
 
 ## Features
 
+### Core System
 - **Arbitrage Smart Contract**: A Solidity contract (`contracts/Arbitrage.sol`) that can execute a flash swap-like arbitrage between two tokens on Uniswap V3.
 - **Price Monitoring Bot**: A Node.js script (`bot/index.js`) that listens for new blocks, fetches prices from a Uniswap V3 pool, and calculates quotes.
 - **Hardhat Environment**: The project is set up with Hardhat for smart contract development, testing, and deployment.
 - **Comprehensive Testing**: Includes test files for both the smart contract and the backend.
+
+### Frontend Dashboard
+- **Modern UI Design**: Professional container styling with improved visual separation and modern design elements
+- **Real-time Workspace Management**: Create, manage, and switch between multiple workspaces
+- **Live Analytics**: Real-time TVL tracking, profit/loss charts, and performance metrics
+- **Interactive Charts**: Zoom, pan, and hover functionality for detailed data analysis
+- **Responsive Design**: Mobile-first responsive UI built with Tailwind CSS
+- **Multi-chain Support**: Support for different blockchain networks and contract types
 
 ## Project Structure
 
@@ -106,6 +115,10 @@ npx hardhat run scripts/deploy.js --network <your-network>
 
 ## Disclaimer
 
+<<<<<<< HEAD
 This is a Mvp. currently working on more features 
 
 
+=======
+This is an MVP, more features shipping soon 
+>>>>>>> 933f656e7bbc1bbc333067da460b28865fa0e175
