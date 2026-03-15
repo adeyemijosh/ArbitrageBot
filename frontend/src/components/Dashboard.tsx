@@ -9,8 +9,8 @@ import ProfitLossChart from './Charts/ProfitLossChart'
 // ── Mock chart data (replace with real Redux selectors when available) ───────
 const mockTVLData = Array.from({ length: 48 }, (_, i) => ({
   timestamp: Date.now() - (47 - i) * 1800000,
-  tvl: 42000 + Math.sin(i * 0.3) * 3000 + Math.random() * 800 + i * 40,
-  usdValue: 42000 + Math.sin(i * 0.3) * 3000 + Math.random() * 800 + i * 40,
+  tvl: 2000000 + Math.sin(i * 0.3) * 200000 + Math.random() * 50000 + i * 2000,
+  usdValue: 2000000 + Math.sin(i * 0.3) * 200000 + Math.random() * 50000 + i * 2000,
 }))
 
 const mockProfitLoss = Array.from({ length: 14 }, (_, i) => ({
@@ -22,7 +22,7 @@ const mockProfitLoss = Array.from({ length: 14 }, (_, i) => ({
 
 const mockActivity = [
   { icon: '◈', color: '#00ff88', label: 'Arbitrage Opportunity Found', sub: 'WETH/DAI pair · Profit: 0.015 ETH', time: '2m ago' },
-  { icon: '▲', color: '#3b82f6', label: 'TVL Update', sub: 'Total Value Locked: $45,230.50', time: '15m ago' },
+  { icon: '▲', color: '#3b82f6', label: 'TVL Update', sub: 'Total Value Locked: $2.09M', time: '15m ago' },
   { icon: '⬡', color: '#a855f7', label: 'Contract Deployment', sub: 'New arbitrage contract deployed', time: '1h ago' },
   { icon: '◈', color: '#00ff88', label: 'Arbitrage Executed', sub: 'USDC/ETH · Profit: 0.008 ETH', time: '2h ago' },
   { icon: '▼', color: '#ef4444', label: 'Gas Spike Detected', sub: 'Paused operations — 245 gwei', time: '3h ago' },
@@ -77,15 +77,7 @@ const Dashboard: React.FC = () => {
     {
       id: 'wallet-1', name: 'Main Wallet', type: 'wallet',
       address: '0x742d35Cc6634C0532925a3b8D',
-      createdAt: '2024-01-15T10:30:00Z', updatedAt: '2024-01-20T15:45:00Z',
-      timestamp: '', value: undefined, metadata: undefined,
-      priceChange24h: undefined, symbol: undefined, volume: 0,
-      price: undefined, marketCap: undefined, liquidity: undefined,
-    },
-    {
-      id: 'contract-1', name: 'Arbitrage Contract', type: 'contract',
-      address: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
-      createdAt: '2024-01-10T08:15:00Z', updatedAt: '2024-01-19T12:30:00Z',
+      createdAt: '2026-03-15T10:30:00Z', updatedAt: '2026-03-15T15:45:00Z',
       timestamp: '', value: undefined, metadata: undefined,
       priceChange24h: undefined, symbol: undefined, volume: 0,
       price: undefined, marketCap: undefined, liquidity: undefined,
@@ -119,7 +111,7 @@ const Dashboard: React.FC = () => {
 
       {/* Stat Cards */}
       <div style={{ display: 'flex', gap: 16 }}>
-        <StatCard label="Total TVL" value="$45,230.50" change="+12.5% (24h)" icon="◈" accent="#3b82f6" />
+        <StatCard label="Total TVL" value="$2.09M" change="+12.5% (24h)" icon="◈" accent="#3b82f6" />
         <StatCard label="Total Profit" value="$2,150.75" change="+8.3% (24h)" icon="▲" accent="#00ff88" />
         <StatCard label="Active Workspaces" value={String(displayWorkspaces.length)} change="Real-time monitoring" icon="⬡" accent="#a855f7" />
       </div>
