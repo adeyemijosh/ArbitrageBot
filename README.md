@@ -106,5 +106,6 @@ npx hardhat run scripts/deploy.js --network <your-network>
 
 ## Disclaimer
 
-This is a proof-of-concept and not a production-ready system. Real-world arbitrage is highly competitive and requires a much more sophisticated setup
+This is a Mvp. currently working on more features 
+
 
