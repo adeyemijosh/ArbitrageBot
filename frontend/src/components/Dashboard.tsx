@@ -22,7 +22,7 @@ const mockProfitLoss = Array.from({ length: 14 }, (_, i) => ({
 
 const mockActivity = [
   { icon: '◈', color: '#00ff88', label: 'Arbitrage Opportunity Found', sub: 'WETH/DAI pair · Profit: 0.015 ETH', time: '2m ago' },
-  { icon: '▲', color: '#3b82f6', label: 'TVL Update', sub: 'Total Value Locked: $2.09M', time: '15m ago' },
+  { icon: '▲', color: '#3b82f6', label: 'TVL Update', sub: 'Total Value Locked: $2.19M', time: '15m ago' },
   { icon: '⬡', color: '#a855f7', label: 'Contract Deployment', sub: 'New arbitrage contract deployed', time: '1h ago' },
   { icon: '◈', color: '#00ff88', label: 'Arbitrage Executed', sub: 'USDC/ETH · Profit: 0.008 ETH', time: '2h ago' },
   { icon: '▼', color: '#ef4444', label: 'Gas Spike Detected', sub: 'Paused operations — 245 gwei', time: '3h ago' },
@@ -111,11 +111,10 @@ const Dashboard: React.FC = () => {
 
       {/* Stat Cards */}
       <div style={{ display: 'flex', gap: 16 }}>
-        <StatCard label="Total TVL" value="$2.09M" change="+12.5% (24h)" icon="◈" accent="#3b82f6" />
+        <StatCard label="Total TVL" value="$2.19M" change="+12.5% (24h)" icon="◈" accent="#3b82f6" />
         <StatCard label="Total Profit" value="$2,150.75" change="+8.3% (24h)" icon="▲" accent="#00ff88" />
         <StatCard label="Active Workspaces" value={String(displayWorkspaces.length)} change="Real-time monitoring" icon="⬡" accent="#a855f7" />
       </div>
-
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
