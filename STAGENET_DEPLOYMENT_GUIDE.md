@@ -39,7 +39,7 @@ stagenet: {
     chainType: "l1",
     url: process.env.STAGENET_RPC_URL || "https://rpc.contract.dev/3bf1bb611043d73921481c879e5d18fa",
     accounts: [
-        process.env.PRIVATE_KEY || "0x227e704e2958c63eafbeb303d1a486b768ad2651121bc59b66ee30fd1000e2c8"
+        process.env.PRIVATE_KEY || ""
     ]
 }
 ```
