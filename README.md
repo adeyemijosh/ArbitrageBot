@@ -118,7 +118,3 @@ npx hardhat run scripts/deploy.js --network <your-network>
 <<<<<<< HEAD
 This is a Mvp. currently working on more features 
 
-
-=======
-This is an MVP, more features shipping soon 
->>>>>>> 933f656e7bbc1bbc333067da460b28865fa0e175
