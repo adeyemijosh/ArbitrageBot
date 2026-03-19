@@ -1,9 +1,12 @@
 # Arbitrage Bot
-
 A comprehensive arbitrage bot system featuring smart contract execution, real-time price monitoring, and an enhanced modern frontend dashboard. This project provides a complete solution for automated arbitrage trading with professional UI/UX design.
-
 ## Features
+## Screenshots
 
+<p align="center">
+  <img src="Screenshot%20(45).png" width="45%" />
+  <img src="Screenshot%20(46).png" width="45%" />
+</p>
 ### Core System
 - **Arbitrage Smart Contract**: A Solidity contract (`contracts/Arbitrage.sol`) that can execute a flash swap-like arbitrage between two tokens on Uniswap V3.
 - **Price Monitoring Bot**: A Node.js script (`bot/index.js`) that listens for new blocks, fetches prices from a Uniswap V3 pool, and calculates quotes.
