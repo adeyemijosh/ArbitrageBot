@@ -19,7 +19,7 @@ const mockWorkspaces: Workspace[] = [
       id: 'wallet-1',
       name: 'Main Wallet',
       type: 'wallet',
-      address: '0x742d35Cc6634C0532925a3b8D',
+      address: '0xd88b53878abf92ab95564c3adff8bfd4a8647d7b',
       createdAt: '2026-03-19T10:30:00Z',
       updatedAt: '2026-03-19T15:45:00Z',
       timestamp: '',
@@ -35,7 +35,7 @@ const mockWorkspaces: Workspace[] = [
 ]
 
 const mockWallet: Wallet = {
-  address: '0x742d35Cc6634C0532925a3b8D',
+  address: '0xd88b53878abf92ab95564c3adff8bfd4a8647d7b',
   nativeTokenBalance: '1000',
   tvl: 2190000,
   transactions: [],
@@ -64,7 +64,7 @@ const mockWallet: Wallet = {
 const mockTransactions: Transaction[] = [
   {
     hash: '0x1234567890abcdef',
-    from: '0x742d35Cc6634C0532925a3b8D',
+    from: '0xd88b53878abf92ab95564c3adff8bfd4a8647d7b',
     to: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
     value: '1000000000000000000',
     gasUsed: '4436885',
