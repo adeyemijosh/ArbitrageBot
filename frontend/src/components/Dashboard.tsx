@@ -76,7 +76,7 @@ const Dashboard: React.FC = () => {
   const mockWorkspaces: Workspace[] = [
     {
       id: 'wallet-1', name: 'Main Wallet', type: 'wallet',
-      address: '0x742d35Cc6634C0532925a3b8D',
+      address: '0xd88b53878abf92ab95564c3adff8bfd4a8647d7b',
       createdAt: '2026-03-15T10:30:00Z', updatedAt: '2026-03-15T15:45:00Z',
       timestamp: '', value: undefined, metadata: undefined,
       priceChange24h: undefined, symbol: undefined, volume: 0,
