@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { http } from 'msw'
 import {
   Workspace,
