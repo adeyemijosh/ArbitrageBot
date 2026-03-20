@@ -12,7 +12,6 @@ import ProfitLossChart from '../Charts/ProfitLossChart'
 const Assets: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { currentWorkspace } = useSelector((state: RootState) => state.workspace)
-  const { tvlData } = useSelector((state: RootState) => state.charts)
   const { wallet } = useSelector((state: RootState) => state.wallet)
 
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h')
@@ -74,7 +73,7 @@ const Assets: React.FC = () => {
             { label: 'Total USD Value', value: `$${totalUSDValue.toLocaleString()}`, sub: 'All tracked tokens', icon: '▲', accent: '#00ff88' },
             { label: 'Project Tokens', value: String(balances?.length || 0), sub: 'Tracked assets', icon: '⬡', accent: '#a855f7' },
             { label: 'Tracking Status', value: 'Active', sub: 'Live updates', icon: '◉', accent: '#00ff88' },
-          ].map(({ label, value, sub, icon, accent }) => (
+          ].map(({ label, value, sub, accent }) => (
             <div key={label} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, right: 0, width: 90, height: 90, pointerEvents: 'none', background: `radial-gradient(circle at top right, ${accent}15, transparent 70%)` }} />
               <p className="section-label" style={{ marginBottom: 8 }}>{label}</p>

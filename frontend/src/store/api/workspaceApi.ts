@@ -13,10 +13,6 @@ import {
   ApiResponse,
 } from '../../types'
 
-interface GetWorkspaceParams {
-  workspaceId: string
-}
-
 interface GetTransactionsParams {
   walletAddress: string
   page?: number

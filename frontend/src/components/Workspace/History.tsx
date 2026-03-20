@@ -86,7 +86,7 @@ const History: React.FC = () => {
               accent: '#00ff88', icon: '◷',
             },
             { label: 'Update Frequency', value: 'Real-time', accent: '#a855f7', icon: '⚡' },
-          ].map(({ label, value, accent, icon }) => (
+          ].map(({ label, value, accent }) => (
             <div key={label} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, right: 0, width: 90, height: 90, pointerEvents: 'none', background: `radial-gradient(circle at top right, ${accent}15, transparent 70%)` }} />
               <p className="section-label" style={{ marginBottom: 8 }}>{label}</p>

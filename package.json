@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "msw": "^2.12.13"
+  },
+  "dependencies": {
+    "lucide-react": "^0.577.0"
   }
 }

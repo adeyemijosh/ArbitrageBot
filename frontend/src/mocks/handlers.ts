@@ -1,16 +1,15 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import {
   Workspace,
   WorkspaceOverview,
   Wallet,
   Transaction,
-  TokenBalance,
   TVLDataPoint,
   PerformanceDataPoint,
   ProfitLossDataPoint,
   ProfitLossMetrics,
   PaginatedResponse,
-  ApiResponse,
+
 } from '../types'
 
 // Mock data
@@ -217,49 +216,50 @@ const mockProfitLossMetrics: ProfitLossMetrics = {
 
 export const handlers = [
   // Workspace endpoints
-  rest.get('/api/workspaces', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: Workspace[]) => any }) => {
-    return res(ctx.json(mockWorkspaces))
+  http.get('/api/workspaces', () => {
+    return Response.json(mockWorkspaces)
   }),
 
-  rest.get('/api/workspaces/:workspaceId', (req: { params: { workspaceId: any } }, res: (arg0: any) => any, ctx: { status: (arg0: number) => any; json: (arg0: Workspace) => any }) => {
-    const { workspaceId } = req.params
+  http.get('/api/workspaces/:workspaceId', ({ params }) => {
+    const { workspaceId } = params
     const workspace = mockWorkspaces.find(w => w.id === workspaceId)
     if (!workspace) {
-      return res(ctx.status(404))
+      return Response.json({ error: 'Workspace not found' }, { status: 404 })
     }
-    return res(ctx.json(workspace))
+    return Response.json(workspace)
   }),
 
-  rest.get('/api/workspaces/:workspaceId/overview', (req: { params: { workspaceId: string } }, res: (arg0: any) => any, ctx: { json: (arg0: WorkspaceOverview) => any }) => {
+  http.get('/api/workspaces/:workspaceId/overview', ({ params }) => {
     const overview: WorkspaceOverview = {
-      workspaceId: req.params.workspaceId as string,
+      workspaceId: params.workspaceId as string,
       nativeTokenBalance: '1000',
       tvl: 2190000,
       gasConsumption: 4436885,
       transactionCount: 11,
       lastUpdated: '2026-03-19T15:36:01Z',
     }
-    return res(ctx.json(overview))
+    return Response.json(overview)
   }),
 
   // Wallet endpoints
-  rest.get('/api/wallets/:walletAddress', (_: any, res: any, ctx: any) => {
-    return res(ctx.json(mockWallet))
+  http.get('/api/wallets/:walletAddress', () => {
+    return Response.json(mockWallet)
   }),
 
-  rest.get('/api/wallets/:walletAddress/balances', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: TokenBalance[]) => any }) => {
-    return res(ctx.json(mockWallet.balances))
+  http.get('/api/wallets/:walletAddress/balances', () => {
+    return Response.json(mockWallet.balances)
   }),
 
-  rest.get('/api/wallets/:walletAddress/analytics/profit-loss', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: ProfitLossMetrics) => any }) => {
-    return res(ctx.json(mockProfitLossMetrics))
+  http.get('/api/wallets/:walletAddress/analytics/profit-loss', () => {
+    return Response.json(mockProfitLossMetrics)
   }),
 
   // Transaction endpoints
-  rest.get('/api/wallets/:walletAddress/transactions', (req: { url: { searchParams: { get: (arg0: string) => any } } }, res: (arg0: any) => any, ctx: { json: (arg0: PaginatedResponse<Transaction>) => any }) => {
-    const page = parseInt(req.url.searchParams.get('page') || '1')
-    const limit = parseInt(req.url.searchParams.get('limit') || '50')
-    
+  http.get('/api/wallets/:walletAddress/transactions', ({ request }) => {
+    const url = new URL(request.url)
+    const page = parseInt(url.searchParams.get('page') || '1')
+    const limit = parseInt(url.searchParams.get('limit') || '50')
+
     const paginatedResponse: PaginatedResponse<Transaction> = {
       data: mockTransactions,
       success: true,
@@ -270,34 +270,34 @@ export const handlers = [
         totalPages: Math.ceil(mockTransactions.length / limit),
       },
     }
-    return res(ctx.json(paginatedResponse))
+    return Response.json(paginatedResponse)
   }),
 
   // Chart data endpoints
-  rest.get('/api/wallets/:walletAddress/charts/tvl', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: TVLDataPoint[]) => any }) => {
-    return res(ctx.json(mockTVLData))
+  http.get('/api/wallets/:walletAddress/charts/tvl', () => {
+    return Response.json(mockTVLData)
   }),
 
-  rest.get('/api/wallets/:walletAddress/charts/performance', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: PerformanceDataPoint[]) => any }) => {
-    return res(ctx.json(mockPerformanceData))
+  http.get('/api/wallets/:walletAddress/charts/performance', () => {
+    return Response.json(mockPerformanceData)
   }),
 
-  rest.get('/api/wallets/:walletAddress/charts/profit-loss', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: ProfitLossDataPoint[]) => any }) => {
-    return res(ctx.json(mockProfitLossData))
+  http.get('/api/wallets/:walletAddress/charts/profit-loss', () => {
+    return Response.json(mockProfitLossData)
   }),
 
   // Project tokens management
-  rest.post('/api/wallets/:walletAddress/project-tokens', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: { success: boolean; data: TokenBalance }) => any }) => {
-    return res(ctx.json({
+  http.post('/api/wallets/:walletAddress/project-tokens', () => {
+    return Response.json({
       success: true,
       data: mockWallet.balances[0],
-    }))
+    })
   }),
 
-  rest.delete('/api/wallets/:walletAddress/project-tokens/:tokenAddress', (req: any, res: (arg0: any) => any, ctx: { json: (arg0: { success: boolean; message: string }) => any }) => {
-    return res(ctx.json({
+  http.delete('/api/wallets/:walletAddress/project-tokens/:tokenAddress', () => {
+    return Response.json({
       success: true,
       message: 'Token removed successfully',
-    }))
+    })
   }),
 ]
