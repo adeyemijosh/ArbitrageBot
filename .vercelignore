@@ -1,3 +1,6 @@
+!frontend/
+!frontend/**
+
 # Ignore Ethereum/Hardhat files
 contracts/
 scripts/
